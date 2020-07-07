@@ -10,4 +10,5 @@
 -author("asorg").
 
 %% API
--export([]).
+-export([test/0]).
+test()->ok.
