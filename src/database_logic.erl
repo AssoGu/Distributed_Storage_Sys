@@ -91,6 +91,7 @@ global_update_file(FileName) ->
     end,
   mnesia:transaction(Fun).
 
+
 %@doc
 %% Inputs - FileName , type String
 %% Output - {atomic,ok}
