@@ -101,6 +101,21 @@ global_delete_file(FileName) ->
         end,
   mnesia:transaction(Fun).
 
+%%@doc
+%% Inputs - FileName , type String
+%% Output - {exists},{not_exists}
+global_is_exists(FileName) ->
+  Entry = {?GlobalDB, FileName},
+  Fun = fun() ->
+    mnesia:read(Entry)
+        end,
+  Ret = mnesia:transaction(Fun),
+  case Ret of
+    {atomic, []} -> {not_exists};
+    _Else ->{exists}
+  end.
+
+
 %%%==============================================================
 %%% General functions
 %%%==============================================================
