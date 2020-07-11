@@ -10,15 +10,16 @@
 -author("asorg").
 
 %% API
--export([readFile/1, split_to_chunks/3, save_to_disk/2, combine_chunks/3, delete_file/2]).
+-export([read_file/2, split_to_chunks/3, save_to_disk/3, combine_chunks/3, delete_file/2]).
 %-define(CHUNK_SIZE, 65536) %64KB chunks
 
 %@read file
-readFile(FileName) ->
-  {Reason, Binary} = file:read_file(FileName),
+read_file(FileName, Path) ->
+  FullPath = Path++FileName,
+  {Reason, Binary} = file:read_file(FullPath),
   case Reason of
     ok -> Binary;
-    _  -> io:format("readFile: File not found~n")
+    _  -> notFound
   end.
 
 
@@ -30,15 +31,15 @@ split_to_chunks(Bin, LenPart, Acc) ->
   split_to_chunks(Rest, LenPart, [Part | Acc]).
 
 %@Save file / chunks to disk
-save_to_disk(Bin, FileName) ->
+save_to_disk(FileName, Bin, Path) ->
   if
     length(Bin) == 1 ->
-      file:write_file(FileName, Bin);
+      file:write_file(Path++FileName, Bin);
     true ->
-      save_chunks(Bin, FileName, 0)
+      save_chunks(Path++FileName, Bin, 0)
   end .
 save_chunks([], _,_) -> ok;
-save_chunks(Bin, FileName, PartNo) ->
+save_chunks(FileName, Bin, PartNo) ->
   PartName = FileName ++ "." ++ "part" ++ integer_to_list(PartNo),
   file:write_file(PartName, hd(Bin)),
   save_chunks(tl(Bin), FileName, PartNo + 1).
@@ -51,16 +52,13 @@ combine_chunks(FileName, ChunksNum, Acc) ->
   {ok, Bin} = file:read_file(PartName),
   combine_chunks(FileName, ChunksNum-1, Acc++[Bin]).
 
-%@delete file / chunks from disk
-delete_file(FileName, ChunksNum) ->
-  if
-    ChunksNum == 1 ->
-      file:delete(FileName) ;
-    true ->
-      delete_chunks(FileName, ChunksNum)
-  end.
-delete_chunks(_,0) -> ok;
-delete_chunks(FileName, ChunksNum) ->
-  PartName = FileName ++ "." ++ "part" ++ integer_to_list(ChunksNum - 1),
-  file:delete(PartName),
-  delete_chunks(FileName, ChunksNum-1).
+%@delete file
+delete_file(FileName, Path) ->
+  file:delete(Path++FileName).
+
+
+%delete_chunks(_,0) -> ok;
+%delete_chunks(FileName, ChunksNum) ->
+%  PartName = FileName ++ "." ++ "part" ++ integer_to_list(ChunksNum - 1),
+%  file:delete(PartName),
+%  delete_chunks(FileName, ChunksNum-1).

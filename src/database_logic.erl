@@ -9,13 +9,7 @@
 -module(database_logic).
 -author("asorg").
 
--define(LocalDB_folder, "/localDB/").
--define(LocalDB, localDB).
--define(GlobalDB, globalDB).
--define(TopologyDB, topologyDB).
-%% databases records
--record(?GlobalDB, {filename, creation_date, location, valid}).
--record(?TopologyDB, {ip, capacity, vNodes_count, vNodes_keys}).
+-include("records.hrl").
 
 -compile(export_all).
 
@@ -33,20 +27,29 @@ initDB()->
 
 %%@ Scans Stored files folder and builds ets database.
 initLocalDB() ->
-  Files = file:list_dir(?LocalDB_folder),
-  ets:new(localDB, [set, named_table]),
+  {ok, Files} = file:list_dir(?LocalDB_folder),
+  ets:new(?LocalDB, [set, named_table]),
   lists:foreach(fun(Key) -> ets:insert(?LocalDB, {Key, valid}) end, Files).
 
 %%%==============================================================
 %%% Local Database API
 %%%==============================================================
 
+%@doc
+%% Input - FileName , String
+%% Output - true
 local_insert_file(FileName) ->
   ets:insert(?LocalDB, {FileName, valid}).
 
+%@doc
+%% Input - FileName , String
+%% Output - true
 local_delete_file(FileName) ->
   ets:delete(?LocalDB, FileName).
 
+%@doc
+%% Input - FileName , String
+%% Output - [{"picture.png.part10",valid}]
 local_find_file(FileName) ->
   ets:lookup(?LocalDB, FileName).
 
