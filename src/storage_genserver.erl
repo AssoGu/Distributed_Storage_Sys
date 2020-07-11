@@ -22,12 +22,24 @@
 %%% Client API
 %%%===================================================================
 
+%@doc
+%% Input - FileName , String
+%% Output - {FileName,Binary}
+%% Output error - {FileName, notFound}
 download_file(FileName) ->
   gen_server:call(?SERVER, {download_file, FileName}).
 
+%@doc
+%% Input - {FileName, Binary}
+%% Output - ok
+%% Output error - {error,Reason}
 upload_file(File) ->
   gen_server:call(?SERVER, {upload_file, File}).
 
+%@doc
+%% Input - FileName , String
+%% Output - ok
+%% Output error - {error, Reason}
 delete_file(FileName) ->
   gen_server:call(?SERVER, {delete_file, FileName}).
 
