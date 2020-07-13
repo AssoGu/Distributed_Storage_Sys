@@ -96,6 +96,17 @@ global_find_file(FileName) ->
 %  mnesia:transaction(Fun).
 
 
+% since we want to update the record using mnesia:write/1 after the reading
+% we acquire write lock (third argument to read) when we read the record from the table
+global_update_valid(FileName, Val) ->
+  F = fun() ->
+    Entry = {?GlobalDB, FileName, write},
+    [File] = mnesia:read(Entry),
+    New = File#?GlobalDB{valid = Val},
+    mnesia:write(New)
+      end,
+  mnesia:transaction(F).
+
 %@doc
 %% Inputs - FileName , type String
 %% Output - {atomic,ok}
