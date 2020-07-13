@@ -10,7 +10,7 @@
 -author("asorg").
 
 %% API
--export([read_file/2, split_to_chunks/3, save_to_disk/3, combine_chunks/3, delete_file/2]).
+-export([read_file/2, split_to_chunks/3, save_to_disk/3,combine_chunks/2, combine_chunks/3, delete_file/2]).
 %-define(CHUNK_SIZE, 65536) %64KB chunks
 
 %@read file
@@ -45,6 +45,10 @@ save_chunks(FileName, Bin, PartNo) ->
   save_chunks(tl(Bin), FileName, PartNo + 1).
 
 %Combining parts to single file
+
+combine_chunks(FileName,ChunksNum) ->
+  combine_chunks(FileName, ChunksNum, []).
+
 combine_chunks(FileName,0,Acc) ->
   file:write_file(FileName, list_to_binary(lists:reverse(Acc)));
 combine_chunks(FileName, ChunksNum, Acc) ->
