@@ -26,7 +26,6 @@
 % 7. update mnesia DB with valid 1
 
 upload_file(FileName) ->
-  io:format("uploading file= ~p .... ~n",[FileName]),
   % 1. check if the file already exists
   Result = database_logic:global_is_exists(FileName),
   if
@@ -34,17 +33,18 @@ upload_file(FileName) ->
       io:format("file= ~p already exists, please use update_file instead ~n",[FileName]),
       file_already_exists;
     true ->
-    % 3. read the file
+      io:format("uploading file= ~p .... ~n",[FileName]),
+      % 3. read the file
       File = files_logic:read_file(FileName,?LocalDB_folder),
-    % 4. split file to chunks
+      % 4. split file to chunks
       Chunks = files_logic:split_to_chunks(File, ?CHUNK_SIZE, []),
-    % 5. hash each chunk and create list of 3 positions per chunk
+      % 5. hash each chunk and create list of 3 positions per chunk
       ChunksNum = length(Chunks),
       % positions looks like: [ {PartName, [Pos1, Pos2]}, {PartName, [Pos1, Pos2]}... ]
       Positions = load_balancer_logic:get_positions(FileName,ChunksNum),
-    % 6. upload the chunks to the storage nodes
+      % 6. upload the chunks to the storage nodes
       upload_chunks(Positions, Chunks),
-    % 7. update mnesia DB with valid 1
+      % 7. update mnesia DB with valid 1
       database_logic:global_insert_file(FileName,Positions),
       io:format("Finish upload file= ~p ~n",[FileName])
   end.
@@ -57,11 +57,11 @@ upload_file(FileName) ->
 
 
 download_file(FileName) ->
-  io:format("downloading file= ~p .... ~n",[FileName]),
   % 1. check if the file exists in mnesia DB
   Result = database_logic:global_is_exists(FileName),
   if
     Result == exists ->
+      io:format("downloading file= ~p .... ~n",[FileName]),
       % 2. collect a list of parts locations
       File = database_logic:global_find_file(FileName),
       Positions = File#?GlobalDB.location,
@@ -71,7 +71,7 @@ download_file(FileName) ->
       ChunksNum = length(Positions),
       files_logic:combine_chunks(FileName, ChunksNum),
       % 5. delete all temporary chunks saved to memory in step #3.
-      delete_chunks(Positions);
+      delete_local_chunks(Positions);
     true ->
       io:format("file= ~p does not exists in global DB ~n",[FileName])
   end.
@@ -86,15 +86,27 @@ download_file(FileName) ->
 % 5. delete the chunks from the storage nodes
 % 6. update mnesia DB
 
+% 1. check if the file exists in mnesia DB
+% 2. change valid to 0
+% 3. collect a list of parts locations
+% 4. delete the chunks from the storage nodes
 delete_file(FileName) ->
-  io:format("deleting file= ~w .... ~n",[FileName])
-% 1. check if the file already exists
-% 2. update mnesia DB with valid 0
-% 3. get from mnesia DB the locations of each chunk
-% 4. create tuple of {storage_node, [chunks to upload]}
-% 5. delete the chunks from the storage nodes
-% 6. update mnesia DB
-.
+  io:format("downloading file= ~p .... ~n",[FileName]),
+  % 1. check if the file exists in mnesia DB
+  Result = database_logic:global_is_exists(FileName),
+  if
+    Result == exists ->
+      % 2. change valid to 0
+      database_logic:global_update_valid(FileName, 0),
+      % 3. collect a list of parts locations
+      File = database_logic:global_find_file(FileName),
+      Positions = File#?GlobalDB.location,
+      % 4. delete the chunks from the storage nodes
+      delete_chunks(Positions),
+      io:format("deleting file= ~p from DB has been completed.... ~n",[FileName]);
+    true ->
+      io:format("file= ~p does not exists in global DB ~n",[FileName])
+  end.
 
 %%% --------------------------- %%%
 %%%  Upload Internal Functions  %%%
@@ -159,19 +171,33 @@ download_chunk({PartName, [Pos|T]}) ->
 %%% --------------------------- %%%
 
 % Delete all parts of a file from memory
+delete_local_chunks([]) ->
+  io:format("Finish deleting all parts ~n");
+
+delete_local_chunks([{PartName, _}|T]) ->
+  spawn(?MODULE, files_logic:delete_file,[PartName, ?LocalDB_folder]),
+  delete_local_chunks(T).
+
+
+% Delete all parts of a file from memory
 delete_chunks([]) ->
   io:format("Finish deleting all parts ~n");
 
-delete_chunks([{PartName, _}|T]) ->
-  files_logic:delete_file(PartName, ?LocalDB_folder),
-  io:format("Finish deleting part ~p from memory ~n",[PartName]),
+delete_chunks([PartNameAndLocations|T]) ->
+  spawn(?MODULE, delete_chunk,[PartNameAndLocations]),
   delete_chunks(T).
 
+% Handle one part of a file
+delete_chunk({PartName, []}) ->
+  io:format("Finish deleting part ~p from global DB ~n",[PartName]);
 
-%upload_chunks(FileName, Chunks, Node)
-
-%download_chunks(FileName, Chunks, Node)
-
-%delete_chunks(FileName, Chunks, Node)
-
-%send_chunks(FileName, Chunks, Node)
+delete_chunk({PartName, [Pos|T]}) ->
+  io:format("Trying to delete part= ~p from server= ~p ~n",[PartName, Pos]),
+  RetVal = storage_genserver:delete_file(PartName, Pos),
+  case RetVal of
+    ok    ->
+      delete_chunk({PartName, T});
+    _Else ->
+      io:format("Deleting part= ~p has failed, trying to download from next server ~n",[PartName]),
+      delete_chunk({PartName, T})
+  end.
