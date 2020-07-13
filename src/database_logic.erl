@@ -60,8 +60,8 @@ local_find_file(FileName) ->
 %@doc
 %% Inputs - FileName , type String
 %% Output - {atomic,ok}
-global_insert_file(FileName) ->
-  Entry = #?GlobalDB{filename=FileName, creation_date = calendar:universal_time(), location = [node()], valid = 1},
+global_insert_file(FileName, Locations) ->
+  Entry = #?GlobalDB{filename=FileName, creation_date = calendar:universal_time(), location = Locations, valid = 1},
   Fun = fun() ->
     mnesia:write(Entry)
         end,
@@ -86,13 +86,14 @@ global_find_file(FileName) ->
 %%                   {{2020,7,9},{19,24,8}},
 %%                   ['node1@MacBook-Pro'],
 %%                   1}]}
-global_update_file(FileName) ->
-  Entry = {?GlobalDB, FileName},
-  Fun = fun() ->
-    global_delete_file(Entry),
-    global_insert_file(Entry)
-    end,
-  mnesia:transaction(Fun).
+%
+%global_update_file(FileName) ->
+%  Entry = {?GlobalDB, FileName},
+%  Fun = fun() ->
+%    global_delete_file(Entry),
+%    global_insert_file(Entry)
+%    end,
+%  mnesia:transaction(Fun).
 
 
 %@doc
@@ -130,7 +131,7 @@ add_node(Node) ->
 %%%==============================================================
 %%% General functions
 %%%==============================================================
-test() ->
-  global_insert_file(#?GlobalDB{filename="Index0.JPG", creation_date = calendar:universal_time(), location = [node()], valid = 1}),
-  global_insert_file(#?GlobalDB{filename="Index1.JPG", creation_date = calendar:universal_time(), location = [node()], valid = 1}),
-  global_insert_file(#?GlobalDB{filename="Index2.JPG", creation_date = calendar:universal_time(), location = [node()], valid = 1}).
+%test() ->
+ % global_insert_file(#?GlobalDB{filename="Index0.JPG", creation_date = calendar:universal_time(), location = [node()], valid = 1}),
+  %global_insert_file(#?GlobalDB{filename="Index1.JPG", creation_date = calendar:universal_time(), location = [node()], valid = 1}),
+  %global_insert_file(#?GlobalDB{filename="Index2.JPG", creation_date = calendar:universal_time(), location = [node()], valid = 1}).
