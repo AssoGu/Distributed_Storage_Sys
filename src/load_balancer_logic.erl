@@ -8,10 +8,11 @@
 %%%-------------------------------------------------------------------
 -module(load_balancer_logic).
 -author("adircohen").
+-export([get_positions/2]).
 
 % return: [ {PartName, {Pos1, Pos2}}, {PartName, {Pos1, Pos2}}... ]
 get_positions(FileName,ChunksNum) ->
-  {PosA, PosB, PosC}.
+  {}.
 
 %% API
 -export([]).

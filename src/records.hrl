@@ -13,7 +13,7 @@
 -define(LocalDB, localDB).
 -define(GlobalDB, globalDB).
 -define(TopologyDB, topologyDB).
-
+-define(CHUNK_SIZE, 65536) %64KB chunks
 %% databases records
 -record(?GlobalDB, {filename, creation_date, location, valid}).
 -record(?TopologyDB, {ip, capacity, vNodes_count, vNodes_keys}).
