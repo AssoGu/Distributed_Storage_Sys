@@ -11,7 +11,7 @@
 
 %% API
 -export([read_file/2, split_to_chunks/3, save_to_disk/3,combine_chunks/2, combine_chunks/3, delete_file/2]).
-%-define(CHUNK_SIZE, 65536) %64KB chunks
+
 
 %@read file
 read_file(FileName, Path) ->

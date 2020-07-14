@@ -7,26 +7,44 @@
 %%% Created : 10. Jul 2020 0:09
 %%%-------------------------------------------------------------------
 -module(load_balancer_logic).
+-include("records.hrl").
 -author("adircohen").
 -compile(export_all).
 -define(HASH, md5).
 
-%@doc
+
+%%%===================================================================
+%%% Consistent Hashing API
+%%%===================================================================
+%@doc - create new consistent hashing ring
 %% Input - Nodes: List of Nodes
 %% VNodes: List, number of VNodes created for each Node in "Nodes" respectively
 %% Output
 new_ring(Nodes, VNodes) ->
   %lists:zip create lists of  [{NodeName, NumOfVNodes}...]
   NodesHashes = [node_position(X) || X <- lists:zip(Nodes, VNodes)],
-  %Build gb_tree
-  gb_trees:from_orddict(lists:keysort(1,lists:flatten(NodesHashes))).
+  %Build hash ring
+  Ring = gb_trees:from_orddict(lists:keysort(1,lists:flatten(NodesHashes))),
+  %save ring in local database
+  put(?HashRing,Ring),
+  ok.
 
-%@doc 
+%@doc - add new node to CH ring
+%% Input - Nodes: List of Nodes
+%% VNodes: List, number of VNodes created for each Node in "Nodes" respectively
+%% Output
+add_node(Node, VNodes) ->
+  Positions = node_position({Node,VNodes}),
+  NewRing = lists:foldl(fun({Pos, Node}, Ring) -> gb_trees:insert(Pos, Node, Ring) end, get(?HashRing), Positions),
+  put(?HashRing,NewRing),
+  ok.
+
+%@doc - perform lookup on CH ring
 %% Input - Key - hash of object
-%% Input - Ring - gb_tree
 %% Input - N Closest Nodes to Key
 %% Output - [Node ID1, Node ID2 ..., Node IDN]
-ring_lookup(Key, Ring, N) ->
+ring_lookup(Key, N) ->
+  Ring = get(?HashRing),
   Iter = gb_trees:iterator_from(Key, Ring),
   ring_lookup(Iter, Ring, N, []).
 
@@ -51,49 +69,38 @@ ring_lookup(Iter, Ring, N, Nodes) ->
       end
   end.
 
-%@doc
-%% Input - Key - hash of object
-%% Input - Ring - gb_tree
-%% Output - Node ID
-ring_lookup(Key, Ring) ->
-  Iter = gb_trees:iterator_from(Key, Ring),
-  %Get first element greater or equal to Key
-  case gb_trees:next(Iter) of
-    none ->
-      %Not found, return the smallest element in the tree -> the beginning of the hash ring
-      {_,Node} = gb_trees:smallest(Ring);
-    {_,Node,_} ->
-      %Key found, return node
-      Node
-  end.
 
-%@doc
+%@doc - returns positions of given file on the ring
 %% Input - FileName
 %% Input - Ring - gb_tree
 %% Input - N - Number of replicas
 %% Output - [{PartName0,[Pos1,Pos2..],{PartName1, [Pos1,Pos2..]}...],
-get_positions(FileName, ChunksNum, N, Ring) when ChunksNum > 1 ->
-  PartNames =  gen_part_names(FileName, ChunksNum),
-  [{PartName, ring_lookup(hash(PartName),Ring, N)} || PartName <- PartNames];
-get_positions(FileName, _, N, Ring) ->
-  {FileName, ring_lookup(hash(FileName),Ring, N)}.
+get_positions(FileName, PartsNum, N) ->
+  PartNames =  gen_part_names(FileName, PartsNum),
+  [{PartName, ring_lookup(hash(PartName), N)} || PartName <- PartNames].
+
+%@doc - same function but return position for one part.
+get_positions(FileName, N) ->
+  {FileName, ring_lookup(hash(FileName), N)}.
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 
-node_position({Node,VNodes}) ->
+%@doc - returns nodes positions
+node_position({Node, VNodes}) ->
   [{hash(Node, Indx), Node} ||  Indx <- lists:seq(1, VNodes)].
 
+%@doc - hash functions
 hash(X) ->
   XBin = term_to_binary(X),
   crypto:hash(?HASH, <<XBin/binary>>).
-
 hash(X, Y) ->
   XBin = term_to_binary(X),
   YBin = term_to_binary(Y),
   crypto:hash(?HASH, <<XBin/binary, YBin/binary>>).
 
+%@doc - generate part names
 gen_part_names(FileName, PartsNum) ->
   gen_part_names(FileName, PartsNum, []).
 gen_part_names(_,0,PartNames) ->

@@ -8,40 +8,15 @@
 
 -behaviour(gen_server).
 
--include("records.hrl").
-
--record(state, {requests}).
-
 -export([start_link/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
-  code_change/3, download_file/2,upload_file/2, delete_file/2]).
+  code_change/3]).
+
+-include("records.hrl").
+-record(state, {requests}).
 
 
 
-%%%===================================================================
-%%% Client API
-%%%===================================================================
-
-%@doc
-%% Input - FileName , String
-%% Output - {FileName,Binary}
-%% Output error - {FileName, notFound}
-download_file(FileName, Dest) ->
-  gen_server:call(Dest, {download_file, FileName}).
-
-%@doc
-%% Input - {FileName, Binary}
-%% Output - ok
-%% Output error - {error,Reason}
-upload_file(File, Dest) ->
-  gen_server:call(Dest, {upload_file, File}).
-
-%@doc
-%% Input - FileName , String
-%% Output - ok
-%% Output error - {error, Reason}
-delete_file(FileName, Dest) ->
-  gen_server:call(Dest, {delete_file, FileName}).
 
 %%%===================================================================
 %%% Spawning and gen_server implementation

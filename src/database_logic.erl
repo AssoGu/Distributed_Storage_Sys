@@ -25,34 +25,6 @@ initDB()->
   mnesia:create_table(?GlobalDB, [{disc_copies, [node()]},{type, set},{attributes, record_info(fields,?GlobalDB)}]),
   mnesia:create_table(?TopologyDB, [{disc_copies, [node()]},{type, set},{attributes, record_info(fields, ?TopologyDB)}]).
 
-%%@ Scans Stored files folder and builds ets database.
-initLocalDB() ->
-  {ok, Files} = file:list_dir(?LocalDB_folder),
-  ets:new(?LocalDB, [set, named_table]),
-  lists:foreach(fun(Key) -> ets:insert(?LocalDB, {Key, valid}) end, Files).
-
-%%%==============================================================
-%%% Local Database API
-%%%==============================================================
-
-%@doc
-%% Input - FileName , String
-%% Output - true
-local_insert_file(FileName) ->
-  ets:insert(?LocalDB, {FileName, valid}).
-
-%@doc
-%% Input - FileName , String
-%% Output - true
-local_delete_file(FileName) ->
-  ets:delete(?LocalDB, FileName).
-
-%@doc
-%% Input - FileName , String
-%% Output - [{"picture.png.part10",valid}]
-local_find_file(FileName) ->
-  ets:lookup(?LocalDB, FileName).
-
 %%%==============================================================
 %%% Global Database API
 %%%==============================================================
@@ -95,7 +67,6 @@ global_find_file(FileName) ->
 %    end,
 %  mnesia:transaction(Fun).
 
-
 % since we want to update the record using mnesia:write/1 after the reading
 % we acquire write lock (third argument to read) when we read the record from the table
 global_update_valid(FileName, Val) ->
@@ -131,12 +102,10 @@ global_is_exists(FileName) ->
     _Else ->{exists}
   end.
 
-
 %%%==============================================================
 %%% General functions
 %%%==============================================================
-
-add_node(Node) ->
+share_db(Node) ->
   mnesia:change_config(extra_db_nodes, [Node]).
 
 %%%==============================================================
