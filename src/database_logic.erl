@@ -9,10 +9,8 @@
 -module(database_logic).
 -author("asorg").
 
+-export([initDB/0,global_insert_file/2,global_find_file/1,global_delete_file/1,global_is_exists/1,global_update_valid/2,share_db/1]).
 -include("records.hrl").
-
--compile(export_all).
-
 
 %%%==============================================================
 %%% Databases Initialization API

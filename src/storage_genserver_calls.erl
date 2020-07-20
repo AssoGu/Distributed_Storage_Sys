@@ -6,11 +6,11 @@
 %%% @end
 %%% Created : 14. Jul 2020 21:35
 %%%-------------------------------------------------------------------
--module(storage_node_calls).
+-module(storage_genserver_calls).
 -author("asorg").
 
 %% API
--compile(export_all).
+-export([download_file/2,delete_file/2,upload_file/2]).
 
 %%%===================================================================
 %%% Storage gen_server calls

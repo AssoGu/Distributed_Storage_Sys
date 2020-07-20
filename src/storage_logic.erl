@@ -10,12 +10,10 @@
 %%%-------------------------------------------------------------------
 -module(storage_logic).
 -author("adircohen").
--include("records.hrl").
 
-
-%% API
 -export([upload_file/1, download_file/1, delete_file/1]).
 
+-include("records.hrl").
 
 
 % 1. check if the file already exists
@@ -126,7 +124,7 @@ upload_chunk({FileName, []}, _) ->
   ok;
 
 upload_chunk({FileName, [Pos|T]}, Chunk) ->
-  RetVal = storage_genserver:upload_file({FileName, Chunk}, Pos),
+  RetVal = storage_genserver_calls:upload_file({FileName, Chunk}, Pos),
   case RetVal of
     ok    ->
       upload_chunk({FileName, T}, Chunk);
@@ -155,7 +153,7 @@ download_chunk({PartName, []}) ->
 % 1. Downaload the Chunk
 % 2. If ok, store in memory, Else - try next storage for this part
 download_chunk({PartName, [Pos|T]}) ->
-  RetVal = storage_genserver:download_file(PartName, Pos),
+  RetVal = storage_genserver_calls:download_file(PartName, Pos),
   case RetVal of
     ok    ->
       {_, Chunk} = RetVal,
@@ -175,7 +173,7 @@ delete_local_chunks([]) ->
   io:format("Finish deleting all parts ~n");
 
 delete_local_chunks([{PartName, _}|T]) ->
-  spawn(?MODULE, files_logic:delete_file,[PartName, ?LocalDB_folder]),
+  spawn(files_logic, delete_file,[PartName, ?LocalDB_folder]),
   delete_local_chunks(T).
 
 
@@ -193,7 +191,7 @@ delete_chunk({PartName, []}) ->
 
 delete_chunk({PartName, [Pos|T]}) ->
   io:format("Trying to delete part= ~p from server= ~p ~n",[PartName, Pos]),
-  RetVal = storage_genserver:delete_file(PartName, Pos),
+  RetVal = storage_genserver_calls:delete_file(PartName, Pos),
   case RetVal of
     ok    ->
       delete_chunk({PartName, T});

@@ -7,9 +7,11 @@
 %%% Created : 10. Jul 2020 0:09
 %%%-------------------------------------------------------------------
 -module(load_balancer_logic).
--include("records.hrl").
+
 -author("adircohen").
--compile(export_all).
+
+-export([new_ring/2, ring_lookup/2, get_positions/2, get_positions/3, add_node/2, test_ring/0]).
+-include("records.hrl").
 -define(HASH, md5).
 
 

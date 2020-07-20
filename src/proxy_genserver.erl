@@ -13,7 +13,9 @@
   code_change/3]).
 
 -include("records.hrl").
+-define(Replicas,1).
 -record(state, {}).
+
 
 %%%===================================================================
 %%% Spawning and gen_server implementation
@@ -24,6 +26,11 @@ start_link() ->
 init([]) ->
   {ok, #state{}}.
 
+
+handle_call({is_exists, FileName}, _From, State = #state{}) ->
+  IsExists = database_logic:global_is_exists(FileName),
+  {reply, IsExists, State};
+
 handle_call({add_node, Node, VNodes}, _From, State = #state{}) ->
   case get(?HashRing) of
     undefined ->
@@ -33,12 +40,12 @@ handle_call({add_node, Node, VNodes}, _From, State = #state{}) ->
   end,
   {reply, ok, State};
 
-handle_call({get_positions, FileName, N}, _From, State = #state{}) ->
-  Positions = load_balancer_logic:get_positions(FileName, N),
+handle_call({get_positions, FileName}, _From, State = #state{}) ->
+  Positions = load_balancer_logic:get_positions(FileName, ?Replicas),
   {reply, Positions, State};
 
-handle_call({get_positions, FileName, PartsNum, N}, _From, State = #state{}) ->
-  Positions = load_balancer_logic:get_positions(FileName, PartsNum, N),
+handle_call({get_positions, FileName, PartsNum}, _From, State = #state{}) ->
+  Positions = load_balancer_logic:get_positions(FileName, PartsNum, ?Replicas),
   {reply, Positions, State}.
 
 handle_cast(test, State = #state{}) ->
