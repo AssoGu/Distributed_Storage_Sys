@@ -8,14 +8,15 @@
 %%%-------------------------------------------------------------------
 -author("asorg").
 
--define(SERVER, ?MODULE).
+-define(StorageNode, node()).
 -define(LocalDB_folder, "localDB/").
+-define(Downloads_folder, "downloads/").
 -define(LocalDB, localDB).
 -define(GlobalDB, globalDB).
--define(TopologyDB, topologyDB).
+-define(StatisticsDB, statDB).
 -define(HashRing,ring).
 -define(CHUNK_SIZE, 65536). %64KB chunks
 -define(LoadBalancer, loadbalancer).
 %% databases records
 -record(?GlobalDB, {filename, creation_date, location, valid}).
--record(?TopologyDB, {ip, capacity, vNodes_count, vNodes_keys}).
+-record(?StatisticsDB, {ip, storage_cap, storage_cap_free, vNodes}).

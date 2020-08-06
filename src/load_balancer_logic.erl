@@ -37,7 +37,16 @@ new_ring(Nodes, VNodes) ->
 %% Output
 add_node(Node, VNodes) ->
   Positions = node_position({Node,VNodes}),
-  NewRing = lists:foldl(fun({Pos, Node}, Ring) -> gb_trees:insert(Pos, Node, Ring) end, get(?HashRing), Positions),
+  NewRing = lists:foldl(
+    fun({Pos, Node}, Ring) ->
+      case gb_trees:is_defined(Pos,Ring) of
+        true  ->
+          Ring;
+        false ->
+          gb_trees:insert(Pos, Node, Ring)
+      end
+    end,
+    get(?HashRing), Positions),
   put(?HashRing,NewRing),
   ok.
 

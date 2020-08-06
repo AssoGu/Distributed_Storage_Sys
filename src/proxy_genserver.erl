@@ -31,13 +31,14 @@ handle_call({is_exists, FileName}, _From, State = #state{}) ->
   IsExists = database_logic:global_is_exists(FileName),
   {reply, IsExists, State};
 
-handle_call({add_node, Node, VNodes}, _From, State = #state{}) ->
+handle_call({add_node, Node, StorageGenPid, VNodes}, _From, State = #state{}) ->
   case get(?HashRing) of
     undefined ->
-      load_balancer_logic:new_ring([Node],[VNodes]);
+      load_balancer_logic:new_ring([StorageGenPid],[VNodes]);
     _else ->
-      load_balancer_logic:add_node(Node,VNodes)
+      load_balancer_logic:add_node(StorageGenPid,VNodes)
   end,
+  database_logic:share_db(Node),
   {reply, ok, State};
 
 handle_call({get_positions, FileName}, _From, State = #state{}) ->

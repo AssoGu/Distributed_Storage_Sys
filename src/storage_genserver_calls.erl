@@ -21,18 +21,18 @@
 %% Output - {FileName,Binary}
 %% Output error - {FileName, notFound}
 download_file(FileName, Dest) ->
-  gen_server:call(Dest, {download_file, FileName}).
+  gen_server:call({global, Dest}, {download_file, FileName}).
 
 %@doc
 %% Input - {FileName, Binary}
 %% Output - ok
 %% Output error - {error,Reason}
 upload_file(File, Dest) ->
-  gen_server:call(Dest, {upload_file, File}).
+  gen_server:call({global, Dest}, {upload_file, File}).
 
 %@doc
 %% Input - FileName , String
 %% Output - ok
 %% Output error - {error, Reason}
 delete_file(FileName, Dest) ->
-  gen_server:call(Dest, {delete_file, FileName}).
+  gen_server:call({global, Dest}, {delete_file, FileName}).

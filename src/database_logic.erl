@@ -9,7 +9,9 @@
 -module(database_logic).
 -author("asorg").
 
--export([initDB/0,global_insert_file/2,global_find_file/1,global_delete_file/1,global_is_exists/1,global_update_valid/2,share_db/1]).
+-export([initDB/0, global_insert_file/2, global_find_file/1, global_delete_file/1, global_is_exists/1, global_update_valid/2, share_db/1, statistics_add_node/2, statistics_delete_node/1
+,statistics_storage_available/1]).
+
 -include("records.hrl").
 
 %%%==============================================================
@@ -21,7 +23,7 @@
 
 initDB()->
   mnesia:create_table(?GlobalDB, [{disc_copies, [node()]},{type, set},{attributes, record_info(fields,?GlobalDB)}]),
-  mnesia:create_table(?TopologyDB, [{disc_copies, [node()]},{type, set},{attributes, record_info(fields, ?TopologyDB)}]).
+  mnesia:create_table(?StatisticsDB, [{disc_copies, [node()]},{type, set},{attributes, record_info(fields,?StatisticsDB)}]).
 
 %%%==============================================================
 %%% Global Database API
@@ -70,7 +72,7 @@ global_find_file(FileName) ->
 global_update_valid(FileName, Val) ->
   F = fun() ->
     Entry = {?GlobalDB, FileName, write},
-    [File] = mnesia:read(Entry),
+    File = mnesia:read(Entry),
     New = File#?GlobalDB{valid = Val},
     mnesia:write(New)
       end,
@@ -96,9 +98,49 @@ global_is_exists(FileName) ->
         end,
   Ret = mnesia:transaction(Fun),
   case Ret of
-    {atomic, []} -> {not_exists};
-    _Else ->{exists}
+    {atomic, []} -> not_exists;
+    _Else -> exists
   end.
+
+%%%==============================================================
+%%% Statistics Database API
+%%%==============================================================
+
+%@doc
+%% Input - Node ip,
+%% Input - Stat, tuple {capacity}
+%% Output - {atomic,ok}
+statistics_add_node(Node, {Cap, VNodes}) ->
+  Entry = #?StatisticsDB{ip = Node , storage_cap = Cap, storage_cap_free = Cap, vNodes = VNodes},
+  Fun = fun() ->
+    mnesia:write(Entry)
+        end,
+  mnesia:transaction(Fun).
+
+%@doc
+%% Inputs - Node ip
+%% Output - {atomic,ok}
+statistics_delete_node(Node) ->
+  Entry = {?StatisticsDB, Node},
+  Fun = fun() ->
+    mnesia:delete(Entry)
+        end,
+  mnesia:transaction(Fun).
+
+%@doc
+%% Input - Node
+%% Output - Capacity
+statistics_storage_available(Node) ->
+  Entry = {?StatisticsDB, Node},
+  Fun = fun() ->
+    mnesia:read(Entry)
+        end,
+  {atomic, [{_,_,_,Cap,_}]} = mnesia:transaction(Fun),
+  Cap.
+
+statistics_dump() ->ok.
+
+
 
 %%%==============================================================
 %%% General functions
