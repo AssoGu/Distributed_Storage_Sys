@@ -10,63 +10,74 @@
 -author("asorg").
 -include_lib("wx/include/wx.hrl").
 
--define(FONT_SIZE, 20).
-
 %% API
--export([start/0,storage_button_click/2]).
+-export([main/0,op_mode_dialog/1, storage_button_click/2]).
 
 
+%%%==============================================================
+%%% Main gui
+%%%==============================================================
 
-start() ->
-  %Create Top Level window
+main() ->
   wx:new(),
-  Frame = wxFrame:new(wx:null(), 1, "Distributed Storage System"),
-  wxFrame:setSize(Frame, {300,100}),
+  MainFrame = wxFrame:new(wx:null(), ?wxID_ANY, "Distributed Storage System"),
+  wxFrame:setSize(MainFrame, {1000,800}),
+  wxFrame:show(MainFrame),
+  op_mode_dialog(MainFrame).
+
+
+
+
+%%%==============================================================
+%%% Operation mode
+%%%==============================================================
+
+op_mode_dialog(Frame) ->
+  %Create Top Level window
+  Dialog = wxDialog:new(Frame, ?wxID_ANY, "Distributed Storage System"),
+  wxDialog:setSize(Dialog, {300,100}),
 
 %% build and layout the GUI components
-  Label = wxStaticText:new(Frame, ?wxID_ANY, "Choose operation mode"),
-  ProxyButton = wxButton:new(Frame, ?wxID_ANY, [{label, "Proxy"}]),
-  StorageButton = wxButton:new(Frame, ?wxID_ANY, [{label, "Storage"}]),
+  Label = wxStaticText:new(Dialog, ?wxID_ANY, "Choose operation mode"),
+  ProxyButton = wxButton:new(Dialog, ?wxID_ANY, [{label, "Proxy"}]),
+  StorageButton = wxButton:new(Dialog, ?wxID_ANY, [{label, "Storage"}]),
   %Set Font size
-  Font = wxFont:new(?FONT_SIZE, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?
+  Font = wxFont:new(16, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?
   wxFONTWEIGHT_BOLD),
   wxTextCtrl:setFont(ProxyButton, Font),
   wxTextCtrl:setFont(StorageButton, Font),
   %Set button background color
   wxButton:setBackgroundColour(ProxyButton,?wxBLACK),
   wxButton:setBackgroundColour(StorageButton,?wxBLACK),
-  %Set component sizes and positoins
+  %Set component sizes and positions
   MainSizer = wxBoxSizer:new(?wxVERTICAL),
   wxSizer:add(MainSizer, Label, [{flag, ?wxALIGN_CENTER bor ?wxEXPAND},{border,5}]),
   wxSizer:add(MainSizer, ProxyButton, [{flag,?wxALIGN_CENTER bor ?wxALL },{border,5}]),
   wxSizer:add(MainSizer, StorageButton, [{flag,?wxALIGN_CENTER bor ?wxALL},{border,5}]),
-  wxWindow:setSizer(Frame, MainSizer),
+  wxWindow:setSizer(Dialog, MainSizer),
   %connect buttons to functions
-  wxButton:connect(ProxyButton, command_button_clicked, [{callback, proxy_button_click}, {userData, Frame}]),
-  wxButton:connect(StorageButton, command_button_clicked, [{callback, fun(Evt, Obj) -> storage_button_click(Evt, Obj)end}, {userData, Frame}]),
+  %wxButton:connect(ProxyButton, command_button_clicked, [{callback, fun main_window/2}, {userData, {Dialog, "Proxy"}}]),
+  wxButton:connect(StorageButton, command_button_clicked, [{callback, fun storage_button_click/2}, {userData, {Frame, Dialog}}]),
   %launch gui
-  wxFrame:show(Frame),
-  timer:sleep(10000).
-
-proxy_button_click(#wx{ userData = #{userData := Frame}}, _Event)->
-  W = wxWindow:new(Frame, ?wxID_ANY,"Storage mode"),
-  wxWindow:show(W).
+  wxDialog:showModal(Dialog).
 
 storage_button_click(Evt, _Obj) ->
-  Frame = Evt#wx.userData,
-  W = wxFrame:new(Frame, ?wxID_ANY, "Storage mode"),
+  {TopFrame, LastDialog} = Evt#wx.userData,
+  %Close last dialog
+  wxDialog:close(LastDialog),
+  NewDialog = wxDialog:new(TopFrame, ?wxID_ANY, "Storage mode"),
   %Text Boxes
-  LabelIP = wxStaticText:new(W, ?wxID_ANY, "Enter Proxy node ip address:"),
-  LabelCapacity = wxStaticText:new(W, ?wxID_ANY, "Enter Storage node HDD Capacity (MB):"),
-  Ip = wxTextCtrl:new(W, ?wxID_ANY, [{value, " "}]),
-  Capacity = wxTextCtrl:new(W, ?wxID_ANY, [{value, " "}]),
+  LabelIP = wxStaticText:new(NewDialog, ?wxID_ANY, "Enter Proxy node ip address:"),
+  LabelCapacity = wxStaticText:new(NewDialog, ?wxID_ANY, "Enter Storage node HDD Capacity (MB):"),
+  Ip = wxTextCtrl:new(NewDialog, ?wxID_ANY, [{value, " "}]),
+  Capacity = wxTextCtrl:new(NewDialog, ?wxID_ANY, [{value, " "}]),
   %Button
-  StartButton = wxButton:new(W, ?wxID_ANY, [{label, "Start"}]),
-  Font = wxFont:new(?FONT_SIZE, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?
+  StartButton = wxButton:new(NewDialog, ?wxID_ANY, [{label, "Start"}]),
+  Font = wxFont:new(16, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?
   wxFONTWEIGHT_BOLD),
   wxTextCtrl:setFont(StartButton, Font),
-  %Set button background color
   wxButton:setBackgroundColour(StartButton,?wxBLACK),
+  wxButton:connect(StartButton, command_button_clicked),
 
   %Set component sizes and positions
   WindowSizer = wxBoxSizer:new(?wxVERTICAL),
@@ -75,46 +86,30 @@ storage_button_click(Evt, _Obj) ->
   wxSizer:add(WindowSizer, LabelCapacity, [{flag,?wxALIGN_CENTER bor ?wxALL },{border,5}]),
   wxSizer:add(WindowSizer, Capacity, [{flag,?wxALIGN_CENTER bor ?wxALL},{border,5}]),
   wxSizer:add(WindowSizer, StartButton, [{flag,?wxALIGN_CENTER bor ?wxALL },{border,5}]),
-  wxWindow:setSizer(W, WindowSizer),
-  wxButton:connect(StartButton, command_button_clicked, [{callback, fun(Evt, Obj) -> start_button_click(Evt, Obj)end}, {userData, Frame}]),
-  wxFrame:show(W).
+  wxWindow:setSizer(NewDialog, WindowSizer),
 
-%% This is an initialyze window, which will indicate to the user once finished.
-start_button_click(Evt, _Obj) ->
-  Frame = Evt#wx.userData,
-  W = wxFrame:new(Frame, ?wxID_ANY, "Adding to DB sa Storage node"),
-  %Text Boxes
-  Headline = wxStaticText:new(W, ?wxID_ANY, "Setting your storage as part of the database"),
-  %Button
-  CancelButton = wxButton:new(W, ?wxID_ANY, [{label, "Cancel"}]),
-  Font = wxFont:new(?FONT_SIZE, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?
-  wxFONTWEIGHT_BOLD),
-  wxTextCtrl:setFont(CancelButton, Font),
-  %Set button background color
-  wxButton:setBackgroundColour(CancelButton,?wxBLACK),
-
-  %Set component sizes and positions
-  WindowSizer = wxBoxSizer:new(?wxVERTICAL),
-  wxSizer:add(WindowSizer, Headline, [{flag,?wxALIGN_CENTER bor ?wxALL },{border,5}]),
-  wxSizer:add(WindowSizer, CancelButton, [{flag,?wxALIGN_CENTER bor ?wxALL },{border,5}]),
-  wxWindow:setSizer(W, WindowSizer),
-  wxButton:connect(CancelButton, command_button_clicked, [{callback, fun(Evt, Obj) -> terminate(Evt, Obj)end}, {userData, Frame}]),
-
-%  Widths_field = 10,
-%  StatusBar = wxStatusBar(),
-%  Parent = wxWindow(),
-%  create(StatusBar, Parent),
-%  setStatusWidths(StatusBar, Widths_field)
-   wxFrame:show(W).
+  %connect buttons to functions
+  wxDialog:showModal(NewDialog),
+  receive
+    _click ->
+      Input_ip  = wxTextCtrl:getValue(Ip),
+      Input_cap = wxTextCtrl:getValue(Capacity),
+      io:format("ip ~p cap ~p ~n",[Input_ip,Input_cap])
+  end.
 
 
 
-%% Here we will manage the main window which the storage node interact with
+
+%%%==============================================================
+%%% Main window gui
+%%%==============================================================
+
+main_window(Evt,_Obj) ->
+  {Frame, Op_mode} = Evt#wx.userData,
+  wxFrame:close(Frame),
+  MainFrame = wxFrame:new(wx:null(), ?wxID_ANY, "Distributed Storage System - " ++ Op_mode ++ " mode"),
+  wxFrame:setSize(MainFrame, {1000,1000}),
+  wxFrame:show(MainFrame).
 
 
-%% terminate the window
-
-terminate(Evt, Obj) ->
-  wxFrame:destroy(),
-  ok.
 
