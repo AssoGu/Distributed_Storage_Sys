@@ -43,4 +43,20 @@ stop(_State) ->
 %% internal functions
 
 %Used to calculate vNodes according to the resources
-calculate_VNodes(Capacity) -> 5.
+calculate_VNodes(Capacity) ->
+    Vnodes = idiv(Capacity, ?VNODE_SIZE),
+    Vnodes.
+
+
+floor(X) when X < 0 ->
+    T = trunc(X),
+    case X - T == 0 of
+        true -> T;
+        false -> T - 1
+    end;
+
+floor(X) ->
+    trunc(X).
+
+idiv(A, B) ->
+    floor(A / B).

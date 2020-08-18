@@ -11,7 +11,7 @@
 -module(storage_logic).
 -author("adircohen").
 
--export([upload_file/1, download_file/1, delete_file/1, upload_chunk/2, upload_chunks/2]).
+-export([upload_file/1, download_file/1, delete_file/1, upload_chunk/2, upload_chunks/2, update_file/1]).
 
 -include("records.hrl").
 
@@ -106,6 +106,30 @@ delete_file(FileName) ->
     true ->
       io:format("file= ~p does not exists in global DB ~n",[FileName])
   end.
+
+
+%%% -----------------
+%%% update file logic
+%%% -----------------
+% 1. check if the file already exists
+% 2. delete the file using delete method
+% 3. upload the file using upload method
+
+update_file(FileName) ->
+  io:format("update file= ~p .... ~n",[FileName]),
+  % 1. check if the file exists in mnesia DB
+  Result = database_logic:global_is_exists(FileName),
+  if
+    Result == exists ->
+      % 2. delete the file using delete method
+      delete_file(FileName),
+      % 3. upload the file using upload method
+      upload_file(FileName);
+    true ->
+      io:format("file= ~p does not exists in global DB, please use upload instead ~n",[FileName])
+  end.
+
+
 
 %%% --------------------------- %%%
 %%%  Upload Internal Functions  %%%

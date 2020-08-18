@@ -10,7 +10,7 @@
 -author("asorg").
 
 %% API
--export([download_file/2,delete_file/2,upload_file/2]).
+-export([download_file/2,delete_file/2,upload_file/2,update_file/2]).
 
 %%%===================================================================
 %%% Storage gen_server calls
@@ -21,18 +21,49 @@
 %% Output - {FileName,Binary}
 %% Output error - {FileName, notFound}
 download_file(FileName, Dest) ->
-  gen_server:call({global, Dest}, {download_file, FileName}).
+  RetVal = global:whereis_name(Dest),
+  case RetVal of
+    _ ->
+      gen_server:call({global, Dest}, {download_file, FileName});
+    undefined ->
+      {reply, undefined}
+  end.
 
 %@doc
 %% Input - {FileName, Binary}
 %% Output - ok
 %% Output error - {error,Reason}
 upload_file(File, Dest) ->
-  gen_server:call({global, Dest}, {upload_file, File}).
+  RetVal = global:whereis_name(Dest),
+  case RetVal of
+    _ ->
+      gen_server:call({global, Dest}, {upload_file, File});
+    undefined ->
+      {reply, undefined}
+  end.
 
 %@doc
 %% Input - FileName , String
 %% Output - ok
 %% Output error - {error, Reason}
 delete_file(FileName, Dest) ->
-  gen_server:call({global, Dest}, {delete_file, FileName}).
+  RetVal = global:whereis_name(Dest),
+  case RetVal of
+    _ ->
+      gen_server:call({global, Dest}, {delete_file, FileName});
+    undefined ->
+      {reply, undefined}
+  end.
+
+%@doc
+%% Input - FileName , String
+%% Output - ok
+%% Output error - {error, Reason}
+update_file(FileName, Dest) ->
+  RetVal = global:whereis_name(Dest),
+  case RetVal of
+    _ ->
+      gen_server:call({global, Dest}, {update_file, FileName});
+    undefined ->
+      {reply, undefined}
+  end.
