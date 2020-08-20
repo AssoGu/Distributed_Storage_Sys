@@ -77,12 +77,6 @@ download_file(FileName) ->
 %%% -----------------
 %%% delete file logic
 %%% -----------------
-% 1. check if the file already exists
-% 2. update mnesia DB with valid 0
-% 3. get from mnesia DB the locations of each chunk
-% 4. create tuple of {storage_node, [chunks to upload]}
-% 5. delete the chunks from the storage nodes
-% 6. update mnesia DB
 
 % 1. check if the file exists in mnesia DB
 % 2. change valid to 0
@@ -128,8 +122,6 @@ update_file(FileName) ->
     true ->
       io:format("file= ~p does not exists in global DB, please use upload instead ~n",[FileName])
   end.
-
-
 
 %%% --------------------------- %%%
 %%%  Upload Internal Functions  %%%
