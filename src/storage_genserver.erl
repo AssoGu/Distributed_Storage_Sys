@@ -52,7 +52,6 @@ handle_call({upload_file, {FileName, Bin}}, _From, #state{requests = X}) ->
       {reply, {error,Reason}, #state{requests = X+1}}
   end;
 
-
 %@doc
 %% Input - FileName , String
 %% Output - ok
@@ -67,6 +66,21 @@ handle_call({delete_file, FileName}, _From, #state{requests = X}) ->
     {error,Reason} ->
       {reply, {error,Reason}, #state{requests = X+1}}
   end.
+
+%@doc
+%% Input - FileName , String
+%% Output - ok
+%% Output error - {error, Reason}
+%handle_call({update_file, FileName}, _From, #state{requests = X}) ->
+%  % Update file from disk
+%  RetVal = files_logic:update_file(FileName, ?LocalDB_folder),
+%  %Replay to caller
+%  case RetVal of
+%    ok ->
+%      {reply, ok, #state{requests = X+1}};
+%    {error,Reason} ->
+%      {reply, {error,Reason}, #state{requests = X+1}}
+%  end.
 
 handle_cast(_Request, State ) ->
   {noreply, State}.
