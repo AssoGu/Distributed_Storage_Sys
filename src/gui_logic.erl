@@ -1,21 +1,33 @@
--module(gui).
+-module(gui_logic).
 -include_lib("wx/include/wx.hrl").
 
--export([start/0]).
+-export([start/0,test/0,files_logger/2, create_window/1, op_mode_dialog/1]).
+
+-include("records.hrl").
 %% Menu definitions
 -define(menuDownload, 10).
 -define(menuUpload, 11).
 -define(menuDelete, 12).
+-define(storageButton, 30).
+-define(proxyButton, 40).
 -define(pi, wxAuiPaneInfo).
+
+
+test() ->
+	Wx = wx:new(),
+	GuiObjects = {Frame, StatListBox, InfoTextCtrl, FilesListBox} = wx:batch(fun() -> create_window(Wx) end),
+	wxWindow:show(Frame),
+	Env = wx:get_env(),
+	spawn(fun() -> files_logger(FilesListBox,Env) end).
+
+
 
 start()->
 	Wx = wx:new(),
-	Frame = wx:batch(fun() -> create_window(Wx) end),
+	GuiObjects = {Frame, StatListBox, InfoTextCtrl, FilesListBox} = wx:batch(fun() -> create_window(Wx) end),
 	wxWindow:show(Frame),
-	op_mode_dialog(Frame),
-	loop(Frame),
-	wx:destroy(),
-	ok.
+	{OpMode,ProxyIP,Cap} = op_mode_dialog(Frame),
+	{OpMode,ProxyIP,Cap,GuiObjects}.
 
 create_window(Wx)->
 	%% Create Frame
@@ -48,11 +60,11 @@ create_window(Wx)->
 
 	%% Create Pane Clone?
 	%create_pane(Panel, Manager, Pane),
-	create_pane(Panel, Manager,
+	StatListBox = create_listbox(Panel, Manager,
 		?pi:caption(?pi:left(?pi:new(Pane)), "Statistics")),
-	create_pane(Panel, Manager,
+	InfoTextCtrl = create_pane(Panel, Manager,
 		?pi:caption(?pi:bottom(?pi:new(Pane)), "Log")),
-	create_listbox(Panel, Manager,
+	FilesListBox = create_listbox(Panel, Manager,
 		?pi:caption(?pi:centre(?pi:new(Pane)), "Files")),
 	create_menu(Frame),
 
@@ -63,11 +75,11 @@ create_window(Wx)->
 	%% Set Connect Close
 	wxFrame:connect(Frame, close_window),
 
-	Frame.
+	{Frame, StatListBox, InfoTextCtrl, FilesListBox}.
 
 create_pane(Parent, Manager, Pane) ->
 	TextCtrl = wxTextCtrl:new(Parent, ?wxID_ANY, [{size, {300,200}},
-		{value, "An empty pane"},
+		{value, ""},
 		{style, 0
 			bor ?wxDEFAULT
 			bor ?wxTE_MULTILINE}]),
@@ -76,13 +88,14 @@ create_pane(Parent, Manager, Pane) ->
 
 create_listbox(Parent, Manager, Pane) ->
 	ListBox = wxListBox:new(Parent, ?wxID_ANY, [{size, {300,200}}]),
+	wxListBox:connect(ListBox,command_listbox_doubleclicked),
 	wxAuiManager:addPane(Manager, ListBox, Pane),
 	ListBox.
 
 create_menu(Parent) ->
 	MenuBar = wxMenuBar:new(),
 	setup_menubar(MenuBar),
-	wxFrame:connect(Parent, command_menu_selected),
+	wxFrame:connect(Parent, command_menu_selected,[{userData, menuhandler}]),
 	wxFrame:setMenuBar(Parent, MenuBar).
 
 setup_menubar(Menu) ->
@@ -94,27 +107,6 @@ setup_menubar(Menu) ->
 	%wxMenu:append(File, ?wxID_EXIT, "&Quit"),
 	wxMenuBar:append(Menu, Opt, "&Options").
 
-loop(Frame) ->
-	receive
-		#wx{id=?menuDownload, event=#wxCommand{type=command_menu_selected}}->
-			Prompt = "Please enter file name here.",
-			MD = wxTextEntryDialog:new(Frame,Prompt, [{caption, "Download"}]),
-			case wxTextEntryDialog:showModal(MD) of
-				?wxID_OK ->
-					Str = wxTextEntryDialog:getValue(MD),
-					io:format("downloading ~p~n", [Str]);
-				_ -> ok
-			end,
-			wxDialog:destroy(MD),
-			loop(Frame);
-
-		#wx{id=?menuUpload, event=#wxCommand{type=command_menu_selected}}->
-			io:format("Upload~n"),
-			loop(Frame);
-		#wx{id=?menuDelete, event=#wxCommand{type=command_menu_selected}}->
-			io:format("delete~n"),
-			loop(Frame)
-	end.
 
 
 
@@ -123,15 +115,21 @@ loop(Frame) ->
 %%% Operation mode
 %%%==============================================================
 
-op_mode_dialog(Frame) ->
+op_mode_dialog(Wx) ->
+	%% Create Frame
+	Frame = wxFrame:new(Wx,
+		-1,
+		"Distributed Storage System",
+		%%[{size,{300,200}}]),
+		[{size,{-1,-1}}]),
 	%Create Top Level window
 	Dialog = wxDialog:new(Frame, ?wxID_ANY, "Distributed Storage System"),
 	wxDialog:setSize(Dialog, {300,100}),
 
 %% build and layout the GUI components
 	Label = wxStaticText:new(Dialog, ?wxID_ANY, "Choose operation mode"),
-	ProxyButton = wxButton:new(Dialog, ?wxID_ANY, [{label, "Proxy"}]),
-	StorageButton = wxButton:new(Dialog, ?wxID_ANY, [{label, "Storage"}]),
+	ProxyButton = wxButton:new(Dialog, ?proxyButton, [{label, "Proxy"}]),
+	StorageButton = wxButton:new(Dialog, ?storageButton, [{label, "Storage"}]),
 	%Set Font size
 	Font = wxFont:new(16, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?
 	wxFONTWEIGHT_BOLD),
@@ -147,21 +145,27 @@ op_mode_dialog(Frame) ->
 	wxSizer:add(DialogSizer, StorageButton, [{flag,?wxALIGN_CENTER bor ?wxALL},{border,5}]),
 	wxWindow:setSizer(Dialog, DialogSizer),
 	%connect buttons to functions
-	wxButton:connect(ProxyButton, command_button_clicked, [{callback, fun proxy_button_click/2}, {userData, Dialog}]),
-	wxButton:connect(StorageButton, command_button_clicked, [{callback, fun storage_button_click/2}, {userData, {Frame, Dialog}}]),
+	wxButton:connect(ProxyButton, command_button_clicked,[]),
+	wxButton:connect(StorageButton, command_button_clicked,[]),
 	%launch gui
-	wxDialog:showModal(Dialog).
+	wxDialog:show(Dialog),
+	receive
+		#wx{id=?storageButton, event=#wxCommand{type=command_button_clicked}}->
+			storage_button_click(Frame,Dialog);
 
-storage_button_click(Evt, _Obj) ->
-	{TopFrame, LastDialog} = Evt#wx.userData,
+		#wx{id=?proxyButton, event=#wxCommand{type=command_button_clicked}}->
+			proxy_button_click(Dialog)
+	end.
+
+storage_button_click(TopFrame, LastDialog) ->
 	%Close last dialog
 	wxDialog:close(LastDialog),
 	NewDialog = wxDialog:new(TopFrame, ?wxID_ANY, "Storage mode"),
 	%Text Boxes
 	LabelIP = wxStaticText:new(NewDialog, ?wxID_ANY, "Enter Proxy node ip address:"),
 	LabelCapacity = wxStaticText:new(NewDialog, ?wxID_ANY, "Enter Storage node HDD Capacity (MB):"),
-	Ip = wxTextCtrl:new(NewDialog, ?wxID_ANY, [{value, " "}]),
-	Capacity = wxTextCtrl:new(NewDialog, ?wxID_ANY, [{value, " "}]),
+	Ip = wxTextCtrl:new(NewDialog, ?wxID_ANY, [{value, ""}]),
+	Capacity = wxTextCtrl:new(NewDialog, ?wxID_ANY, [{value, ""}]),
 	%Button
 	StartButton = wxButton:new(NewDialog, ?wxID_ANY, [{label, "Start"}]),
 	Font = wxFont:new(16, ?wxFONTFAMILY_DEFAULT, ?wxFONTSTYLE_NORMAL, ?
@@ -183,16 +187,59 @@ storage_button_click(Evt, _Obj) ->
 	wxDialog:showModal(NewDialog),
 	Input_ip  = wxTextCtrl:getValue(Ip),
 	Input_cap = wxTextCtrl:getValue(Capacity),
-	dss_app:start(storage, Input_ip, Input_cap).
+	{storage,list_to_atom(Input_ip),list_to_integer(Input_cap)}.
 
-proxy_button_click(Evt, _Obj) ->
-	Window = Evt#wx.userData,
-	wxDialog:close(Window),
-	dss_app:start(proxy).
+proxy_button_click(Dialog) ->
+	wxDialog:close(Dialog),
+	{proxy,null,null}.
 
 close_window_click(Evt, _Obj) ->
 	Window = Evt#wx.userData,
 	wxDialog:close(Window).
 
 
+
+
+%%%==============================================================
+%%% GUI threads
+%%%==============================================================
+
+info_logger(TextCtrl,Env)->
+	wx:set_env(Env),
+	receive
+		{log, Msg} ->
+			wxTextCtrl:appendText(TextCtrl,Msg);
+			_-> ok
+	end,
+	info_logger(TextCtrl,Env).
+
+files_logger(ListBox, Env) ->
+	wx:set_env(Env),
+	receive
+		stop -> stopped
+	after 5000 ->
+		Files = mnesia:dirty_all_keys(?GlobalDB),
+		if
+			Files == [] ->
+				ok;
+			true ->
+				wxListBox:set(ListBox, Files)
+		end,
+		files_logger(ListBox, Env)
+	end.
+
+stat_logger(ListBox,Env) ->
+	wx:set_env(Env),
+	receive
+		stop -> stopped
+	after 5000 ->
+		Files = mnesia:dirty_all_keys(?StatisticsDB),
+		if
+			Files == [] ->
+				ok;
+			true ->
+				wxListBox:set(ListBox, Files)
+		end
+	end,
+	stat_logger(ListBox,Env).
 
