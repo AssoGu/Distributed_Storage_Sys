@@ -83,6 +83,20 @@ handle_event(Event=#wx{event=#wxCommand{type=command_menu_selected}},
       end,
       wxDialog:destroy(MD)
   end,
+  {noreply, State};
+
+handle_event(Event=#wx{event=#wxCommand{type=command_listbox_doubleclicked}},
+    State) ->
+  %Extract selected file
+  File = Event#wx.event#wxCommand.cmdString,
+  [Record] = mnesia:dirty_read(?GlobalDB,File),
+  Pos = Record#?GlobalDB.location,
+  %Create new dialog to show positions of files
+  Dialog = wxDialog:new(State#state.frame, ?wxID_ANY, "Files locations"),
+  wxDialog:setSize(Dialog, {350,350}),
+  ListBox = wxListBox:new(Dialog, ?wxID_ANY, [{style,?wxLB_HSCROLL},{size, {300,200}}]),
+  wxListBox:set(ListBox, gui_logic:prepare_for_gui(Pos)),
+  wxDialog:showModal(Dialog),
   {noreply, State}.
 
 
@@ -109,3 +123,8 @@ code_change(_, _, State) ->
 terminate(_Reason, _) ->
   ok.
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% Internal Functions %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

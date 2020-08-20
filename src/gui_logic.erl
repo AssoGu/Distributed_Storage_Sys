@@ -1,7 +1,7 @@
 -module(gui_logic).
 -include_lib("wx/include/wx.hrl").
 
--export([start/0,test/0,files_logger/2, create_window/1, op_mode_dialog/1]).
+-export([start/0,test/0,files_logger/2, create_window/1, op_mode_dialog/1,prepare_for_gui/1]).
 
 -include("records.hrl").
 %% Menu definitions
@@ -88,14 +88,14 @@ create_pane(Parent, Manager, Pane) ->
 
 create_listbox(Parent, Manager, Pane) ->
 	ListBox = wxListBox:new(Parent, ?wxID_ANY, [{size, {300,200}}]),
-	wxListBox:connect(ListBox,command_listbox_doubleclicked),
+	wxListBox:connect(ListBox,command_listbox_doubleclicked,[]),
 	wxAuiManager:addPane(Manager, ListBox, Pane),
 	ListBox.
 
 create_menu(Parent) ->
 	MenuBar = wxMenuBar:new(),
 	setup_menubar(MenuBar),
-	wxFrame:connect(Parent, command_menu_selected,[{userData, menuhandler}]),
+	wxFrame:connect(Parent, command_menu_selected,[]),
 	wxFrame:setMenuBar(Parent, MenuBar).
 
 setup_menubar(Menu) ->
@@ -242,4 +242,28 @@ stat_logger(ListBox,Env) ->
 		end
 	end,
 	stat_logger(ListBox,Env).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% helper function %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Prepare the given list for gui representation
+prepare_for_gui(List) ->
+	prepare_for_gui(List,[]).
+
+prepare_for_gui([],Acc) ->
+	Acc;
+prepare_for_gui([{PartName,Loc}|Rest], Acc) ->
+	Str = PartName ++ ", Location: " ++ list_to_string(Loc,[]),
+	prepare_for_gui(Rest, Acc++[Str]).
+
+
+
+list_to_string(List = [H|T],Acc) when length(List) > 1 ->
+	Str = "["++atom_to_list(H)++"]"++",",
+	list_to_string(T,Acc ++ Str);
+
+list_to_string([H|T],Acc) ->
+	Str = "["++atom_to_list(H)++"]"++ ".",
+	Acc++Str.
 
