@@ -1,33 +1,13 @@
 -module(gui_logic).
 -include_lib("wx/include/wx.hrl").
 
--export([start/0,test/0,files_logger/2, create_window/1, op_mode_dialog/1,prepare_for_gui/1]).
+-export([create_window/1, op_mode_dialog/1,prepare_for_gui/1]).
 
 -include("records.hrl").
 %% Menu definitions
--define(menuDownload, 10).
--define(menuUpload, 11).
--define(menuDelete, 12).
--define(storageButton, 30).
--define(proxyButton, 40).
+
 -define(pi, wxAuiPaneInfo).
 
-
-test() ->
-	Wx = wx:new(),
-	GuiObjects = {Frame, StatListBox, InfoTextCtrl, FilesListBox} = wx:batch(fun() -> create_window(Wx) end),
-	wxWindow:show(Frame),
-	Env = wx:get_env(),
-	spawn(fun() -> files_logger(FilesListBox,Env) end).
-
-
-
-start()->
-	Wx = wx:new(),
-	GuiObjects = {Frame, StatListBox, InfoTextCtrl, FilesListBox} = wx:batch(fun() -> create_window(Wx) end),
-	wxWindow:show(Frame),
-	{OpMode,ProxyIP,Cap} = op_mode_dialog(Frame),
-	{OpMode,ProxyIP,Cap,GuiObjects}.
 
 create_window(Wx)->
 	%% Create Frame
@@ -61,11 +41,11 @@ create_window(Wx)->
 	%% Create Pane Clone?
 	%create_pane(Panel, Manager, Pane),
 	StatListBox = create_listbox(Panel, Manager,
-		?pi:caption(?pi:left(?pi:new(Pane)), "Statistics")),
+		?pi:caption(?pi:left(?pi:new(Pane)), "Online Nodes"),?OnlineWin),
 	InfoTextCtrl = create_pane(Panel, Manager,
 		?pi:caption(?pi:bottom(?pi:new(Pane)), "Log")),
 	FilesListBox = create_listbox(Panel, Manager,
-		?pi:caption(?pi:centre(?pi:new(Pane)), "Files")),
+		?pi:caption(?pi:centre(?pi:new(Pane)), "Files"),?FilesWin),
 	create_menu(Frame),
 
 	wxAuiManager:connect(Manager, aui_pane_button, [{skip,true}]),
@@ -86,8 +66,8 @@ create_pane(Parent, Manager, Pane) ->
 	wxAuiManager:addPane(Manager, TextCtrl, Pane),
 	TextCtrl.
 
-create_listbox(Parent, Manager, Pane) ->
-	ListBox = wxListBox:new(Parent, ?wxID_ANY, [{size, {300,200}}]),
+create_listbox(Parent, Manager, Pane,Id) ->
+	ListBox = wxListBox:new(Parent, Id, [{size, {300,200}}]),
 	wxListBox:connect(ListBox,command_listbox_doubleclicked,[]),
 	wxAuiManager:addPane(Manager, ListBox, Pane),
 	ListBox.
@@ -199,49 +179,6 @@ close_window_click(Evt, _Obj) ->
 
 
 
-
-%%%==============================================================
-%%% GUI threads
-%%%==============================================================
-
-info_logger(TextCtrl,Env)->
-	wx:set_env(Env),
-	receive
-		{log, Msg} ->
-			wxTextCtrl:appendText(TextCtrl,Msg);
-			_-> ok
-	end,
-	info_logger(TextCtrl,Env).
-
-files_logger(ListBox, Env) ->
-	wx:set_env(Env),
-	receive
-		stop -> stopped
-	after 5000 ->
-		Files = mnesia:dirty_all_keys(?GlobalDB),
-		if
-			Files == [] ->
-				ok;
-			true ->
-				wxListBox:set(ListBox, Files)
-		end,
-		files_logger(ListBox, Env)
-	end.
-
-stat_logger(ListBox,Env) ->
-	wx:set_env(Env),
-	receive
-		stop -> stopped
-	after 5000 ->
-		Files = mnesia:dirty_all_keys(?StatisticsDB),
-		if
-			Files == [] ->
-				ok;
-			true ->
-				wxListBox:set(ListBox, Files)
-		end
-	end,
-	stat_logger(ListBox,Env).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

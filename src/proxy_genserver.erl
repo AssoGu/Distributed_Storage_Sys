@@ -13,7 +13,7 @@
   code_change/3]).
 
 -include("records.hrl").
--define(Replicas,1).
+
 -record(state, {}).
 
 
@@ -34,8 +34,12 @@ handle_call({is_exists, FileName}, _From, State = #state{}) ->
 handle_call({add_node, Node, StorageGenPid, VNodes}, _From, State = #state{}) ->
   case get(?HashRing) of
     undefined ->
+      io:format("new ring created~n"),
+      gui_genserver_calls:log("New node has been joined!"),
       load_balancer_logic:new_ring([StorageGenPid],[VNodes]);
     _else ->
+      io:format("new node~n"),
+      gui_genserver_calls:log("New node has been joined!"),
       load_balancer_logic:add_node(StorageGenPid,VNodes)
   end,
   database_logic:share_db(Node),

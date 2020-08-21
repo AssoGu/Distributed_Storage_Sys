@@ -42,7 +42,7 @@ start(storage, ProxyNode, Capacity) ->
     %add storage node to hash ring
     proxy_genserver_calls:add_node(node(), node(), VNodes),
     %add node statistics
-    database_logic:statistics_add_node(node(), {Capacity, VNodes}).
+    database_logic:statistics_add_node(atom_to_list(node()), {Capacity, VNodes},"Storage").
 
 start(proxy) ->
     %Create schema and start mnesia
@@ -52,6 +52,7 @@ start(proxy) ->
     database_logic:initDB(),
     %spawn proxy node with supervisor
     Ret = dss_proxy_sup:start_link(),
+    database_logic:statistics_add_node(atom_to_list(node()), {0, 0},"Proxy"),
     io:format("Proxy node Online - ~p ~n", [Ret]).
 
 

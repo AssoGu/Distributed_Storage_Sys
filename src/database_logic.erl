@@ -9,8 +9,8 @@
 -module(database_logic).
 -author("asorg").
 
--export([initDB/0, global_insert_file/2, global_find_file/1, global_delete_file/1, global_is_exists/1, global_update_valid/2, share_db/1, statistics_add_node/2, statistics_delete_node/1
-,statistics_storage_available/1]).
+-export([initDB/0, global_insert_file/2, global_find_file/1, global_delete_file/1, global_is_exists/1, global_update_valid/2, share_db/1, statistics_add_node/3, statistics_delete_node/1
+,statistics_storage_available/1,statistics_get_node/1]).
 
 -include("records.hrl").
 
@@ -106,12 +106,18 @@ global_is_exists(FileName) ->
 %%% Statistics Database API
 %%%==============================================================
 
+statistics_get_node(Node) ->
+  Entry = {?StatisticsDB, Node},
+  Fun = fun() ->
+    mnesia:read(Entry)
+        end,
+  mnesia:transaction(Fun).
 %@doc
 %% Input - Node ip,
 %% Input - Stat, tuple {capacity}
 %% Output - {atomic,ok}
-statistics_add_node(Node, {Cap, VNodes}) ->
-  Entry = #?StatisticsDB{ip = Node , storage_cap = Cap, storage_cap_free = Cap, vNodes = VNodes},
+statistics_add_node(Node, {Cap, VNodes}, Rule) ->
+  Entry = #?StatisticsDB{ip = Node , rule = Rule, storage_cap = Cap, storage_cap_free = Cap, vNodes = VNodes},
   Fun = fun() ->
     mnesia:write(Entry)
         end,
