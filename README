@@ -1,16 +1,21 @@
 Init:
 On proxy node:
-1) call dss_app:start(proxy,0)
+1) call dss_app:start(), choose proxy in gui
 
 On storage nodes:
-1) call dss_app:start(storage,"proxy server ip")
+1) call dss_app:start(), choose storage in gui, enter proxy node ip and capacity(currently in kb,need to be fixed)
 
 
 Flow - upload/downloading from/to another storage node,
-Pick one storage node
-1)storage_logic:upload(FileName) to upload file, for now - make sure file is in ?LocalDBFolder
-2)storage_logic:download(FileName) to download file, make sure folder ?Download_folder created.
 
+use menu.
 
-to do - improve download/upload file. function need to check is download/uplaod source is online with global:whereis_name() before perform
-request. if not exists move to next source, if not more source throw exception.
+to do-
+2) Vnodes calculations formula
+
+3)every node update his capacity after upload/download
+
+3)dynamiclly added node - need to sort the ring.
+
+4)if the same node rejoining the ring we do not add him again to the ring to avoid multiple vnodes (need to perform check in statisticsDB)
+
