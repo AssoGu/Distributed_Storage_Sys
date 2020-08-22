@@ -47,6 +47,8 @@ handle_call({upload_file, {FileName, Bin}}, _From, #state{requests = X}) ->
   %Replay to caller
   case RetVal of
     ok ->
+      database_logic:statistics_dec_capacity(node()),
+      %database_logic:statistics_dec_capacity(atom_to_list(node())),
       {reply, ok, #state{requests = X+1}};
     {error,Reason} ->
       {reply, {error,Reason}, #state{requests = X+1}}
@@ -62,6 +64,8 @@ handle_call({delete_file, FileName}, _From, #state{requests = X}) ->
   %Replay to caller
   case RetVal of
     ok ->
+      %database_logic:statistics_inc_capacity(atom_to_list(node())),
+      database_logic:statistics_inc_capacity(node()),
       {reply, ok, #state{requests = X+1}};
     {error,Reason} ->
       {reply, {error,Reason}, #state{requests = X+1}}
