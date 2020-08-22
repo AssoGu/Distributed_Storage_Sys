@@ -23,17 +23,21 @@
 % 6. upload the chunks to the storage nodes
 % 7. update mnesia DB with valid 1
 
-upload_file(FileName) ->
+upload_file(Path) ->
   % 1. check if the file already exists
+  FileName = filename:basename(Path),
+  Dir      = filename:dirname(Path)++"/",
   Result = database_logic:global_is_exists(FileName),
   if
     Result == exists ->
+      gui_genserver_calls:log("File: ~p already exists, use update call instead",FileName),
       io:format("file= ~p already exists, please use update_file instead ~n",[FileName]),
       file_already_exists;
     true ->
+      gui_genserver_calls:log("Uploading file: ~p...",FileName),
       io:format("uploading file= ~p .... ~n",[FileName]),
       % 3. read the file
-      File = files_logic:read_file(FileName,?LocalDB_folder),
+      File = files_logic:read_file(FileName, Dir),
       % 4. split file to chunks
       Chunks = files_logic:split_to_chunks(File, ?CHUNK_SIZE, []),
       % 5. hash each chunk and create list of 3 positions per chunk
@@ -44,6 +48,7 @@ upload_file(FileName) ->
       upload_chunks_serial(Positions, Chunks),
       % 7. update mnesia DB with valid 1
       database_logic:global_insert_file(FileName,Positions),
+      gui_genserver_calls:log("~p has been uploaded.",FileName),
       io:format("Finish upload file= ~p ~n",[FileName])
   end.
 
@@ -59,7 +64,8 @@ download_file(FileName) ->
   Result = database_logic:global_is_exists(FileName),
   if
     Result == exists ->
-      io:format("downloading file= ~p .... ~n",[FileName]),
+      gui_genserver_calls:log("Downloading file: ~p...",FileName),
+      io:format("Downloading file= ~p .... ~n",[FileName]),
       % 2. collect a list of parts locations
       {_,[Entry]} = database_logic:global_find_file(FileName),
       Positions = Entry#?GlobalDB.location,
@@ -69,8 +75,10 @@ download_file(FileName) ->
       ChunksNum = length(Positions),
       files_logic:combine_chunks(FileName, ChunksNum, ?Downloads_folder),
       % 5. delete all temporary chunks saved to memory in step #3.
-      delete_local_chunks(Positions);
+      delete_local_chunks(Positions),
+      gui_genserver_calls:log("~p has been downloaded.",FileName);
     true ->
+      gui_genserver_calls:log("File ~p does not exists",FileName),
       io:format("file= ~p does not exists in global DB ~n",[FileName])
   end.
 
@@ -83,6 +91,7 @@ download_file(FileName) ->
 % 3. collect a list of parts locations
 % 4. delete the chunks from the storage nodes
 delete_file(FileName) ->
+  gui_genserver_calls:log("Delete file ~p...",FileName),
   io:format("delete file= ~p .... ~n",[FileName]),
   % 1. check if the file exists in mnesia DB
   Result = database_logic:global_is_exists(FileName),
@@ -95,6 +104,7 @@ delete_file(FileName) ->
       Positions = Entry#?GlobalDB.location,
       % 4. delete the chunks from the storage nodes
       delete_chunks_serial(Positions),
+      gui_genserver_calls:log("~p has been deleted.",FileName),
       io:format("deleting file= ~p from DB has been completed.... ~n",[FileName]),
       database_logic:global_delete_file(FileName);
     true ->
@@ -110,6 +120,7 @@ delete_file(FileName) ->
 % 3. upload the file using upload method
 
 update_file(FileName) ->
+  gui_genserver_calls:log("Update file ~p...",FileName),
   io:format("update file= ~p .... ~n",[FileName]),
   % 1. check if the file exists in mnesia DB
   Result = database_logic:global_is_exists(FileName),
@@ -120,6 +131,7 @@ update_file(FileName) ->
       % 3. upload the file using upload method
       upload_file(FileName);
     true ->
+      gui_genserver_calls:log("File: ~p does not exists.",FileName),
       io:format("file= ~p does not exists in global DB, please use upload instead ~n",[FileName])
   end.
 
@@ -157,6 +169,7 @@ upload_chunk({FileName, [Pos|T]}, Chunk) ->
     ok    ->
       upload_chunk({FileName, T}, Chunk);
     _Else ->
+      gui_genserver_calls:log("Uploading file ~p failed.",FileName),
       io:format("Upload ~p failed~n",[FileName]),
       upload_chunk({FileName, T}, Chunk)
   end.
@@ -195,6 +208,7 @@ download_chunk({PartName, [Pos|T]}) ->
   {_,Binary} = storage_genserver_calls:download_file(PartName, Pos),
   case Binary of
     notFound   ->
+      gui_genserver_calls:log("Download file ~p failed, trying difference source",PartName),
       io:format("Download ~p failed, trying to download from next server ~n",[PartName]),
       download_chunk({PartName, T});
     _Else ->
@@ -245,3 +259,4 @@ delete_chunk({PartName, [Pos|T]}) ->
       io:format("Deleting part= ~p has failed, trying to download from next server ~n",[PartName]),
       delete_chunk({PartName, T})
   end.
+

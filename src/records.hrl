@@ -18,6 +18,17 @@
 -define(CHUNK_SIZE, 65536). %64KB chunks
 -define(VNODE_SIZE, 655360). %640KB chunks
 -define(LoadBalancer, loadbalancer).
+-define(Gui,gui).
+-define(menuDownload, 10).
+-define(menuUpload, 11).
+-define(menuDelete, 12).
+-define(storageButton, 30).
+-define(proxyButton, 40).
+-define(FilesWin, 42).
+-define(OnlineWin, 43).
+
+-define(Replicas,2).
+
 %% databases records
 -record(?GlobalDB, {filename, creation_date, location, valid}).
--record(?StatisticsDB, {ip, storage_cap, storage_cap_free, vNodes}).
+-record(?StatisticsDB, {ip, rule, storage_cap, storage_cap_free, vNodes}).
