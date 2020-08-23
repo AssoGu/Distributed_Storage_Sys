@@ -62,8 +62,11 @@ stop(_State) ->
 
 %% internal functions
 %Used to calculate vNodes according to the resources
+% Input - Capacity: Available capacity in MB
+%                   Ex: 10
 calculate_VNodes(Capacity) ->
-    Vnodes = idiv(Capacity, ?VNODE_SIZE),
+    CapInMb = Capacity * 1000000,
+    Vnodes = idiv(CapInMb, ?VNODE_SIZE),
     Vnodes.
 
 

@@ -9,8 +9,8 @@
 -module(database_logic).
 -author("asorg").
 
--export([initDB/0, global_insert_file/2, global_find_file/1, global_delete_file/1, global_is_exists/1, global_update_valid/2, share_db/1, statistics_add_node/2, statistics_delete_node/1
-,statistics_storage_available/1]).
+-export([initDB/0, global_insert_file/2, global_find_file/1, global_delete_file/1, global_is_exists/1, global_update_valid/2, share_db/1, statistics_add_node/3, statistics_delete_node/1
+,statistics_storage_available/1, statistics_get_node/1, statistics_dec_capacity/1, statistics_inc_capacity/1]).
 
 -include("records.hrl").
 
@@ -71,8 +71,7 @@ global_find_file(FileName) ->
 % we acquire write lock (third argument to read) when we read the record from the table
 global_update_valid(FileName, Val) ->
   F = fun() ->
-    Entry = {?GlobalDB, FileName, write},
-    File = mnesia:read(Entry),
+    [File] = mnesia:read(?GlobalDB, FileName, write),
     New = File#?GlobalDB{valid = Val},
     mnesia:write(New)
       end,
@@ -141,7 +140,7 @@ statistics_storage_available(Node) ->
   Fun = fun() ->
     mnesia:read(Entry)
         end,
-  {atomic, [{_,_,_,Cap,_}]} = mnesia:transaction(Fun),
+  {atomic, [{_,_,_,_,Cap,_}]} = mnesia:transaction(Fun),
   Cap.
 
 statistics_dump() ->ok.
@@ -154,8 +153,7 @@ statistics_inc_capacity(Node) ->
   NewCap = Cap + ?CHUNK_SIZE,
   io:format("NewCap = ~p ~n",[NewCap]),
   F = fun() ->
-    Entry = {?StatisticsDB, Node, write},
-    File = mnesia:read(Entry),
+    [File] = mnesia:read(?StatisticsDB, Node, write),
     New = File#?StatisticsDB{storage_cap_free = NewCap},
     mnesia:write(New)
       end,
@@ -169,12 +167,12 @@ statistics_dec_capacity(Node) ->
   NewCap = Cap - ?CHUNK_SIZE,
   io:format("NewCap = ~p ~n",[NewCap]),
   F = fun() ->
-    Entry = {?StatisticsDB, Node, write},
-    File = mnesia:read(Entry),
+    [File] = mnesia:read(?StatisticsDB, Node, write),
     New = File#?StatisticsDB{storage_cap_free = NewCap},
     mnesia:write(New)
       end,
   mnesia:transaction(F).
+
 
 %%%==============================================================
 %%% General functions
