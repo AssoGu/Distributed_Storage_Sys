@@ -44,11 +44,11 @@ handle_call({download_file, FileName}, _From, #state{requests = X}) ->
 handle_call({upload_file, {FileName, Bin}}, _From, #state{requests = X}) ->
   %Write file to disk
   RetVal = files_logic:save_to_disk(FileName, [Bin], ?LocalDB_folder),
+  FileSize = filelib:file_size(?LocalDB_folder++FileName),
   %Replay to caller
   case RetVal of
     ok ->
-      %database_logic:statistics_dec_capacity(node()),
-      database_logic:statistics_dec_capacity(atom_to_list(node())),
+      database_logic:statistics_dec_capacity(atom_to_list(node()), FileSize),
       {reply, ok, #state{requests = X+1}};
     {error,Reason} ->
       {reply, {error,Reason}, #state{requests = X+1}}
@@ -60,12 +60,12 @@ handle_call({upload_file, {FileName, Bin}}, _From, #state{requests = X}) ->
 %% Output error - {error, Reason}
 handle_call({delete_file, FileName}, _From, #state{requests = X}) ->
   %Delete file from disk
+  FileSize = filelib:file_size(?LocalDB_folder++FileName),
   RetVal = files_logic:delete_file(FileName, ?LocalDB_folder),
   %Replay to caller
   case RetVal of
     ok ->
-      %database_logic:statistics_inc_capacity(node()),
-      database_logic:statistics_inc_capacity(atom_to_list(node())),
+      database_logic:statistics_inc_capacity(atom_to_list(node()), FileSize),
       {reply, ok, #state{requests = X+1}};
     {error,Reason} ->
       {reply, {error,Reason}, #state{requests = X+1}}

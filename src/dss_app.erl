@@ -38,11 +38,12 @@ start(storage, ProxyNode, Capacity) ->
     %spawn storage node with supervisor
     dss_storage_sup:start_link(),
     %calculate number of vNodes according to resources (to do)
-    VNodes = calculate_VNodes(Capacity),
+    CapInMb = Capacity * 1000000,
+    VNodes = calculate_VNodes(CapInMb),
     %add storage node to hash ring
     proxy_genserver_calls:add_node(node(), node(), VNodes),
     %add node statistics
-    database_logic:statistics_add_node(atom_to_list(node()), {Capacity, VNodes},"Storage").
+    database_logic:statistics_add_node(atom_to_list(node()), {CapInMb, VNodes},"Storage").
 
 start(proxy) ->
     %Create schema and start mnesia
@@ -65,8 +66,7 @@ stop(_State) ->
 % Input - Capacity: Available capacity in MB
 %                   Ex: 10
 calculate_VNodes(Capacity) ->
-    CapInMb = Capacity * 1000000,
-    Vnodes = idiv(CapInMb, ?VNODE_SIZE),
+    Vnodes = idiv(Capacity, ?VNODE_SIZE),
     Vnodes.
 
 

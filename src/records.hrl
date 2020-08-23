@@ -15,7 +15,7 @@
 -define(GlobalDB, globalDB).
 -define(StatisticsDB, statDB).
 -define(HashRing,ring).
--define(CHUNK_SIZE, 65536). %64KB chunks
+-define(CHUNK_SIZE, 6553). %64KB chunks
 -define(VNODE_SIZE, 655360). %640KB chunks
 -define(LoadBalancer, loadbalancer).
 -define(Gui,gui).
@@ -27,7 +27,7 @@
 -define(FilesWin, 42).
 -define(OnlineWin, 43).
 
--define(Replicas,2).
+-define(Replicas,1).
 
 %% databases records
 -record(?GlobalDB, {filename, creation_date, location, valid}).

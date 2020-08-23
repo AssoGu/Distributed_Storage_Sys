@@ -10,7 +10,7 @@
 -author("asorg").
 
 -export([initDB/0, global_insert_file/2, global_find_file/1, global_delete_file/1, global_is_exists/1, global_update_valid/2, share_db/1, statistics_add_node/3, statistics_delete_node/1
-,statistics_storage_available/1, statistics_get_node/1, statistics_dec_capacity/1, statistics_inc_capacity/1]).
+,statistics_storage_available/1, statistics_get_node/1, statistics_dec_capacity/2, statistics_inc_capacity/2]).
 
 -include("records.hrl").
 
@@ -148,9 +148,9 @@ statistics_dump() ->ok.
 %@doc
 %% Input - Node
 %% increment free storage capacity of a Node
-statistics_inc_capacity(Node) ->
+statistics_inc_capacity(Node, FileSize) ->
   Cap = statistics_storage_available(Node),
-  NewCap = Cap + ?CHUNK_SIZE,
+  NewCap = Cap + FileSize,
   io:format("NewCap = ~p ~n",[NewCap]),
   F = fun() ->
     [File] = mnesia:read(?StatisticsDB, Node, write),
@@ -162,9 +162,9 @@ statistics_inc_capacity(Node) ->
 %@doc
 %% Input - Node
 %% decrement free storage capacity of a  Node
-statistics_dec_capacity(Node) ->
+statistics_dec_capacity(Node, FileSize) ->
   Cap = statistics_storage_available(Node),
-  NewCap = Cap - ?CHUNK_SIZE,
+  NewCap = Cap - FileSize,
   io:format("NewCap = ~p ~n",[NewCap]),
   F = fun() ->
     [File] = mnesia:read(?StatisticsDB, Node, write),

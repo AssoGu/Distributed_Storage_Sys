@@ -256,7 +256,7 @@ delete_chunk({PartName, [Pos|T]}) ->
     ok    ->
       delete_chunk({PartName, T});
     _Else ->
-      io:format("Deleting part= ~p has failed, trying to download from next server ~n",[PartName]),
+      io:format("Deleting part= ~p has failed, trying to delete from next server ~n",[PartName]),
       delete_chunk({PartName, T})
   end.
 
