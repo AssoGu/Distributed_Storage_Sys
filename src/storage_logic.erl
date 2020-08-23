@@ -47,7 +47,7 @@ upload_file(Path) ->
       % 6. upload the chunks to the storage nodes
       upload_chunks_serial(Positions, Chunks),
       % 7. update mnesia DB with valid 1
-      database_logic:global_insert_file(FileName,Positions),
+      database_logic:global_insert_file(FileName, ChunksNum, Positions),
       gui_genserver_calls:log("~p has been uploaded.",FileName),
       io:format("Finish upload file= ~p ~n",[FileName])
   end.

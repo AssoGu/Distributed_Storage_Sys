@@ -10,7 +10,7 @@
 
 -author("adircohen").
 
--export([new_ring/2, ring_lookup/2, get_positions/2, get_positions/3, add_node/2, test_ring/0]).
+-export([new_ring/2, ring_lookup/2, get_positions/2, get_positions/3, add_node/2, test_ring/0, pos_difference/2,rebalance_ring/0]).
 -include("records.hrl").
 -define(HASH, md5).
 
@@ -94,6 +94,25 @@ get_positions(FileName, PartsNum, N) ->
 get_positions(FileName, N) ->
   {FileName, ring_lookup(hash(FileName), N)}.
 
+rebalance_ring() ->
+  Keys = mnesia:dirty_all_keys(?GlobalDB),
+  lists:foreach(fun(File) ->
+    {_,[Entry]} = database_logic:global_find_file(File),
+    OldLocations = Entry#?GlobalDB.location,
+    Parts = Entry#?GlobalDB.partsCount,
+    NewLocations = proxy_genserver_calls:get_positions(File,Parts),
+    if
+       OldLocations /= NewLocations ->
+         gui_genserver_calls:log("Rebalancing ring..."),
+         Diff = pos_difference(OldLocations, NewLocations),
+         storage_genserver_calls:transfer(Diff),
+         database_logic:global_update_locations(File,NewLocations);
+      true -> ok
+    end
+                end,
+    Keys).
+
+
 %%====================================================================
 %% Internal functions
 %%====================================================================
@@ -122,3 +141,9 @@ gen_part_names(FileName, PartsNum, PartNames) ->
 
 test_ring() ->
   new_ring(["10.0.0.2","10.0.0.3","10.0.0.7","10.0.0.5", "10.10.10.10"],[2,3,4,3,4]).
+
+%A - old
+%B - new
+pos_difference(A,B) ->
+  Pairs = lists:zip(A,B),
+  [{Old,element(2,New)} || {Old,New} <- Pairs, Old /= New].

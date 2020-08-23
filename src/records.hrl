@@ -30,5 +30,5 @@
 -define(Replicas,1).
 
 %% databases records
--record(?GlobalDB, {filename, creation_date, location, valid}).
+-record(?GlobalDB, {filename, partsCount, creation_date, location, valid}).
 -record(?StatisticsDB, {ip, rule, storage_cap, storage_cap_free, vNodes}).

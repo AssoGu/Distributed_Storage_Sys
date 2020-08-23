@@ -32,8 +32,8 @@ initDB()->
 %@doc
 %% Inputs - FileName , type String
 %% Output - {atomic,ok}
-global_insert_file(FileName, Locations) ->
-  Entry = #?GlobalDB{filename=FileName, creation_date = calendar:universal_time(), location = Locations, valid = 1},
+global_insert_file(FileName, PartsCount, Locations) ->
+  Entry = #?GlobalDB{filename=FileName, partsCount = PartsCount, creation_date = calendar:universal_time(), location = Locations, valid = 1},
   Fun = fun() ->
     mnesia:write(Entry)
         end,
@@ -59,13 +59,14 @@ global_find_file(FileName) ->
 %%                   ['node1@MacBook-Pro'],
 %%                   1}]}
 %
-%global_update_file(FileName) ->
-%  Entry = {?GlobalDB, FileName},
-%  Fun = fun() ->
-%    global_delete_file(Entry),
-%    global_insert_file(Entry)
-%    end,
-%  mnesia:transaction(Fun).
+
+global_update_locations(FileName, NewLocation) ->
+  F = fun() ->
+    [File] = mnesia:read(?GlobalDB, FileName, write),
+    New = File#?GlobalDB{location = NewLocation},
+    mnesia:write(New)
+      end,
+  mnesia:transaction(F).
 
 % since we want to update the record using mnesia:write/1 after the reading
 % we acquire write lock (third argument to read) when we read the record from the table

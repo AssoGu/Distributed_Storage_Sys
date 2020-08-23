@@ -25,5 +25,9 @@ get_positions(FileName, PartsNum) ->
 add_node(Node, StorageGenPid, VNodes) ->
   gen_server:call({global, ?LoadBalancer}, {add_node, Node, StorageGenPid,VNodes}).
 %@doc - checks if file exists on database, return exists/not_exists
+
+
 is_exists(FileName) ->
   gen_server:call({global,?LoadBalancer}, {is_exists,FileName}).
+
+

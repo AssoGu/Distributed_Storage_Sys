@@ -71,22 +71,14 @@ handle_call({delete_file, FileName}, _From, #state{requests = X}) ->
       {reply, {error,Reason}, #state{requests = X+1}}
   end.
 
-%@doc
-%% Input - FileName , String
-%% Output - ok
-%% Output error - {error, Reason}
-%handle_call({update_file, FileName}, _From, #state{requests = X}) ->
-%  % Update file from disk
-%  RetVal = files_logic:update_file(FileName, ?LocalDB_folder),
-%  %Replay to caller
-%  case RetVal of
-%    ok ->
-%      {reply, ok, #state{requests = X+1}};
-%    {error,Reason} ->
-%      {reply, {error,Reason}, #state{requests = X+1}}
-%  end.
 
-handle_cast(_Request, State ) ->
+handle_cast({transfer,{PartName,NewDest}}, State) ->
+  Bin = files_logic:read_file(PartName,?LocalDB_folder),
+  storage_genserver_calls:upload_file({PartName, Bin}, NewDest),
+  files_logic:delete_file(PartName,?LocalDB_folder),
+  {noreply, State};
+
+handle_cast(A, State) ->
   {noreply, State}.
 
 handle_info(_Info, State) ->

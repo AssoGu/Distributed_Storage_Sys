@@ -40,7 +40,8 @@ handle_call({add_node, Node, StorageGenPid, VNodes}, _From, State = #state{}) ->
     _else ->
       io:format("new node~n"),
       gui_genserver_calls:log("New node has been joined!"),
-      load_balancer_logic:add_node(StorageGenPid,VNodes)
+      load_balancer_logic:add_node(StorageGenPid,VNodes),
+      spawn(fun() -> load_balancer_logic:rebalance_ring() end)
   end,
   database_logic:share_db(Node),
   {reply, ok, State};
