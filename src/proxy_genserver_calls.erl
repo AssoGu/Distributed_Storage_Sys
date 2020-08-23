@@ -9,7 +9,7 @@
 -module(proxy_genserver_calls).
 -author("asorg").
 
--export([get_positions/1,get_positions/2,add_node/3, is_exists/1]).
+-export([get_positions/1,get_positions/2,add_node/3, is_exists/1, exit_node/1]).
 -include("records.hrl").
 
 %%%===================================================================
@@ -26,6 +26,9 @@ add_node(Node, StorageGenPid, VNodes) ->
   gen_server:call({global, ?LoadBalancer}, {add_node, Node, StorageGenPid,VNodes}).
 %@doc - checks if file exists on database, return exists/not_exists
 
+exit_node(Node) ->
+  gen_server:call({global, ?LoadBalancer}, {exit_node, Node}).
+%@doc - checks if file exists on database, return exists/not_exists
 
 is_exists(FileName) ->
   gen_server:call({global,?LoadBalancer}, {is_exists,FileName}).
