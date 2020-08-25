@@ -18,6 +18,10 @@
 %%%===================================================================
 %%% Consistent Hashing API
 %%%===================================================================
+
+%%•	Zip the positions of the nodes hashes.
+%%•	Create a ring using gb_trees library
+%%•	Save the ring in DB
 %@doc - create new consistent hashing ring
 %% Input - Nodes: List of Nodes
 %% VNodes: List, number of VNodes created for each Node in "Nodes" respectively
@@ -31,6 +35,9 @@ new_ring(Nodes, VNodes) ->
   put(?HashRing,Ring),
   ok.
 
+%%•	Create hash positions of the Vnodes which will be placed in the ring.
+%%•	Insert the Vnodes into the ring using gb tree library.
+%%•	Update the ring in the DB.
 %@doc - add new node to CH ring
 %% Input - Nodes: List of Nodes
 %% VNodes: List, number of VNodes created for each Node in "Nodes" respectively
@@ -49,6 +56,10 @@ add_node(Node, VNodes) ->
     get(?HashRing), Positions),
   put(?HashRing,NewRing),
   ok.
+
+%%•	Interate over hash ring nodes using gb_trees:iterate_from.
+%%•	 If the needed node is found we return the node.
+
 
 %@doc - perform lookup on CH ring
 %% Input - Key - hash of object
@@ -94,19 +105,35 @@ get_positions(FileName, PartsNum, N) ->
 get_positions(FileName, N) ->
   {FileName, ring_lookup(hash(FileName), N)}.
 
+
+%%•	Retrieve keys from mnesia DB.
+%%•	Find file locations over the current nodes and save the old locations.
+%%•	Calculate new locations of the file over the new ring.
+%%•	Check if there was some change in the locations of each file part.
+%%•	Calculate which part have to move between nodes.
+%%•	Perform transfer of the files – each node send the files to their new location.
+%%•	Update storage database.
+
 rebalance_ring() ->
+  %%•	Retrieve keys from mnesia DB.
   Keys = mnesia:dirty_all_keys(?GlobalDB),
   lists:foreach(fun(File) ->
     {_,[Entry]} = database_logic:global_find_file(File),
+    %%•	Find file locations over the current nodes and save the old locations.
     OldLocations = Entry#?GlobalDB.location,
     Parts = Entry#?GlobalDB.partsCount,
+    %%•	Calculate new locations of the file over the new ring.
     NewLocations = proxy_genserver_calls:get_positions(File,Parts),
     if
-       OldLocations /= NewLocations ->
-         gui_genserver_calls:log("Rebalancing ring..."),
-         Diff = pos_difference(OldLocations, NewLocations),
-         storage_genserver_calls:transfer(Diff),
-         database_logic:global_update_locations(File,NewLocations);
+      %%•	Check if there was some change in the locations of each file part.
+      OldLocations /= NewLocations ->
+        gui_genserver_calls:log("Rebalancing ring..."),
+        %%•	Calculate which part have to move between nodes.
+        Diff = pos_difference(OldLocations, NewLocations),
+        %%•	Perform transfer of the files – each node send the files to their new location.
+        storage_genserver_calls:transfer(Diff),
+        %%•	Update storage database.
+        database_logic:global_update_locations(File,NewLocations);
       true -> ok
     end
                 end,

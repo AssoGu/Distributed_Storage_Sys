@@ -37,7 +37,7 @@ upload_file(File, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
     _ ->
-      gen_server:call({global, Dest}, {upload_file, File});
+      gen_server:call({global, Dest}, {upload_file, File}, infinity);
     undefined ->
       {reply, undefined}
   end.
@@ -50,7 +50,7 @@ delete_file(FileName, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
     _ ->
-      gen_server:call({global, Dest}, {delete_file, FileName});
+      gen_server:call({global, Dest}, {delete_file, FileName}, infinity);
     undefined ->
       {reply, undefined}
   end.
@@ -63,7 +63,7 @@ update_file(FileName, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
     _ ->
-      gen_server:call({global, Dest}, {update_file, FileName});
+      gen_server:call({global, Dest}, {update_file, FileName}, infinity);
     undefined ->
       {reply, undefined}
   end.
