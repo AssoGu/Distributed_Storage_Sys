@@ -46,7 +46,7 @@ create_window(Wx)->
 		?pi:caption(?pi:bottom(?pi:new(Pane)), "Log")),
 	FilesListBox = create_listbox(Panel, Manager,
 		?pi:caption(?pi:centre(?pi:new(Pane)), "Files"),?FilesWin),
-	create_menu(Frame),
+	MenuBar = create_menu(Frame),
 
 	wxAuiManager:connect(Manager, aui_pane_button, [{skip,true}]),
 	wxAuiManager:connect(Manager, aui_pane_maximize, [{skip,true}]),
@@ -55,7 +55,7 @@ create_window(Wx)->
 	%% Set Connect Close
 	wxFrame:connect(Frame, close_window),
 
-	{Frame, StatListBox, InfoTextCtrl, FilesListBox}.
+	{Frame, StatListBox, InfoTextCtrl, FilesListBox,MenuBar}.
 
 create_pane(Parent, Manager, Pane) ->
 	TextCtrl = wxTextCtrl:new(Parent, ?wxID_ANY, [{size, {300,200}},
@@ -76,7 +76,8 @@ create_menu(Parent) ->
 	MenuBar = wxMenuBar:new(),
 	setup_menubar(MenuBar),
 	wxFrame:connect(Parent, command_menu_selected,[]),
-	wxFrame:setMenuBar(Parent, MenuBar).
+	wxFrame:setMenuBar(Parent, MenuBar),
+	MenuBar.
 
 setup_menubar(Menu) ->
 	Opt = wxMenu:new(),
@@ -84,7 +85,6 @@ setup_menubar(Menu) ->
 	wxMenu:append(Opt, ?menuUpload,"&Upload"),
 	wxMenu:append(Opt, ?menuDelete,"&Delete"),
 	wxMenu:appendSeparator(Opt),
-	%wxMenu:append(File, ?wxID_EXIT, "&Quit"),
 	wxMenuBar:append(Menu, Opt, "&Options").
 
 

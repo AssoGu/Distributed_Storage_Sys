@@ -78,6 +78,11 @@ handle_cast({transfer,{PartName,NewDest}}, State) ->
   files_logic:delete_file(PartName,?LocalDB_folder),
   {noreply, State};
 
+% a proper way to terminate the process
+handle_cast({terminate}, State) ->
+  gui_genserver_calls:terminate(),
+  {stop,normal,State};
+
 handle_cast(A, State) ->
   {noreply, State}.
 

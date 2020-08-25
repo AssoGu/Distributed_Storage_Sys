@@ -26,7 +26,8 @@
   frame,
   filesLB,
   statLB,
-  infoTC
+  infoTC,
+  menuBar
 }).
 
 start(Config) ->
@@ -36,10 +37,10 @@ start(Config) ->
 init(_) ->
   register(?Gui,self()),
   Wx = wx:new(),
-  {Frame, StatListBox, InfoTextCtrl, FilesListBox} = wx:batch(fun() -> gui_logic:create_window(Wx) end),
+  {Frame, StatListBox, InfoTextCtrl, FilesListBox, MenuBar} = wx:batch(fun() -> gui_logic:create_window(Wx) end),
   wxWindow:show(Frame),
   erlang:send_after(1, self(), updateGui),
-  {Frame, #state{frame=Frame, filesLB=FilesListBox, statLB=StatListBox, infoTC=InfoTextCtrl}}.
+  {Frame, #state{frame=Frame, filesLB=FilesListBox, statLB=StatListBox, infoTC=InfoTextCtrl, menuBar = MenuBar}}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Callbacks handled as normal gen_server callbacks
@@ -50,9 +51,24 @@ handle_cast({log,Msg}, State) ->
   wxTextCtrl:appendText(State#state.infoTC,Str),
   {noreply,State};
 
+handle_cast(terminate, State) ->
+  {stop, normal, State};
+
 handle_cast(Msg, State) ->
   io:format("Got cast ~p~n",[Msg]),
   {noreply,State}.
+
+
+
+
+%% Exit Flow:
+%%  1. Call exit node of proxy genserver call.
+%%  2.  Triggering proxy genserver
+%%  3.    delete the node from the ring of the load balancer
+%%        re balance the ring
+%%        storage_genserver_calls:exit_node
+%%  4.      use genserver terminate to exit the node
+
 
 %% Async Events are handled in handle_event as in handle_info
 handle_event(Event=#wx{event=#wxCommand{type=command_menu_selected}},
@@ -78,6 +94,16 @@ handle_event(Event=#wx{event=#wxCommand{type=command_menu_selected}},
         ?wxID_CANCEL -> ok
       end,
       wxFileDialog:destroy(MD);
+    %case that handle Exit
+    ?menuExit ->
+      {_,[Entry]} = database_logic:statistics_get_node(atom_to_list(node())),
+      Rule = Entry#?StatisticsDB.rule,
+      if
+        Rule == "Proxy" ->
+          proxy_genserver_calls:terminate();
+        true ->
+          proxy_genserver_calls:exit_node(node())
+      end;
     ?menuDelete ->
       Prompt = "Please enter file name here.",
       MD = wxTextEntryDialog:new(State#state.frame,Prompt, [{caption, "Delete"}]),

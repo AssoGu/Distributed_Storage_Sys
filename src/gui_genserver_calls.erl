@@ -11,7 +11,7 @@
 
 
 %% API
--export([log/1, log/2]).
+-export([log/1, log/2, terminate/0]).
 
 -include("records.hrl").
 
@@ -21,3 +21,6 @@ log(Msg,Arg) ->
 
 log(Msg) ->
   wx_object:cast(?Gui,{log,Msg}).
+
+terminate() ->
+  wx_object:cast(?Gui,terminate).
