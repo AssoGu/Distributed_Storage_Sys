@@ -104,7 +104,7 @@ get_positions(FileName, PartsNum, N) ->
 %@doc - same function but return position for one part.
 get_positions(FileName, N) ->
   {FileName, ring_lookup(hash(FileName), N)}.
-
+%%
 
 %%•	Retrieve keys from mnesia DB.
 %%•	Find file locations over the current nodes and save the old locations.
