@@ -54,15 +54,6 @@ handle_cast(Msg, State) ->
   io:format("Got cast ~p~n",[Msg]),
   {noreply,State}.
 
-%% Exit Flow:
-%%  1. Call exit node of proxy genserver call.
-%%  2.  Triggering proxy genserver
-%%  3.    delete the node from the ring of the load balancer
-%%        re balance the ring
-%%        storage_genserver_calls:exit_node
-%%  4.      use genserver terminate to exit the node
-
-
 %% Async Events are handled in handle_event as in handle_info
 handle_event(Event=#wx{event=#wxCommand{type=command_menu_selected}},
     State) ->
@@ -87,9 +78,6 @@ handle_event(Event=#wx{event=#wxCommand{type=command_menu_selected}},
         ?wxID_CANCEL -> ok
       end,
       wxFileDialog:destroy(MD);
-    %case that handle Exit
-    ?menuExit ->
-      proxy_genserver_calls:exit_node(node());
     ?menuDelete ->
       Prompt = "Please enter file name here.",
       MD = wxTextEntryDialog:new(State#state.frame,Prompt, [{caption, "Delete"}]),

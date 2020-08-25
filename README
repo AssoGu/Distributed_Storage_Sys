@@ -11,15 +11,11 @@ Flow - upload/downloading from/to another storage node,
 use menu.
 
 to do-
+2) Vnodes calculations formula
 
-1) if the same node rejoining the ring we do not add him again to the ring to avoid multiple vnodes (need to perform check in statisticsDB)
+3)every node update his capacity after upload/download
 
-2) FIX terminate procedure:
-%% Exit Flow:
-%%  1. Call exit node of proxy genserver call.
-%%  2.  Triggering proxy genserver
-%%  3.    delete the node from the ring of the load balancer
-%%        re balance the ring
-%%        storage_genserver_calls:exit_node
-%%  4.      use genserver terminate to exit the node
+3)dynamiclly added node - need to sort the ring.
+
+4)if the same node rejoining the ring we do not add him again to the ring to avoid multiple vnodes (need to perform check in statisticsDB)
 

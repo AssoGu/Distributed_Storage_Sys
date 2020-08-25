@@ -31,8 +31,6 @@ handle_call({is_exists, FileName}, _From, State = #state{}) ->
   IsExists = database_logic:global_is_exists(FileName),
   {reply, IsExists, State};
 
-%delete node
-
 handle_call({add_node, Node, StorageGenPid, VNodes}, _From, State = #state{}) ->
   case get(?HashRing) of
     undefined ->
@@ -48,24 +46,6 @@ handle_call({add_node, Node, StorageGenPid, VNodes}, _From, State = #state{}) ->
   database_logic:share_db(Node),
   {reply, ok, State};
 
-% exit node
-handle_call({exit_node, Node}, _From, State = #state{}) ->
-  RetVal = global:whereis_name(Node),
-  case RetVal of
-    _ ->
-      io:format("handle exit node~n"),
-      gui_genserver_calls:log("handle exit node!"),
-      %delete the node from the tree
-      load_balancer_logic:delete_node(Node),
-      % re construct files on the ring for the new one.
-      load_balancer_logic:rebalance_ring(),
-      storage_genserver_calls:exit_node(Node);
-    undefined ->
-      {reply, undefined}
-  end,
-  database_logic:share_db(Node),
-  {reply, ok, State};
-
 handle_call({get_positions, FileName}, _From, State = #state{}) ->
   Positions = load_balancer_logic:get_positions(FileName, ?Replicas),
   {reply, Positions, State};
@@ -73,7 +53,6 @@ handle_call({get_positions, FileName}, _From, State = #state{}) ->
 handle_call({get_positions, FileName, PartsNum}, _From, State = #state{}) ->
   Positions = load_balancer_logic:get_positions(FileName, PartsNum, ?Replicas),
   {reply, Positions, State}.
-
 
 handle_cast(test, State = #state{}) ->
   test_ring(),

@@ -83,7 +83,6 @@ setup_menubar(Menu) ->
 	wxMenu:append(Opt, ?menuDownload,"&Download"),
 	wxMenu:append(Opt, ?menuUpload,"&Upload"),
 	wxMenu:append(Opt, ?menuDelete,"&Delete"),
-	wxMenu:append(Opt, ?menuExit,"&Exit"),
 	wxMenu:appendSeparator(Opt),
 	%wxMenu:append(File, ?wxID_EXIT, "&Quit"),
 	wxMenuBar:append(Menu, Opt, "&Options").
