@@ -126,8 +126,8 @@ handle_event(Event=#wx{id=Id,event=#wxCommand{type=command_listbox_doubleclicked
 
       T0 = wxStaticText:new(Dialog,?wxID_ANY,"Rule: " ++ Entry#?StatisticsDB.rule),
       T1 = wxStaticText:new(Dialog,?wxID_ANY,"Node: " ++ Node),
-      T2 = wxStaticText:new(Dialog,?wxID_ANY,"Capacity: " ++ integer_to_list(Entry#?StatisticsDB.storage_cap)
-      ++"/"++integer_to_list(Entry#?StatisticsDB.storage_cap_free)),
+      T2 = wxStaticText:new(Dialog,?wxID_ANY,"Capacity: " ++ integer_to_list(Entry#?StatisticsDB.storage_cap_free div 1000000)
+      ++"/"++ integer_to_list(Entry#?StatisticsDB.storage_cap div 1000000) ++" MB"),
       T3 = wxStaticText:new(Dialog,?wxID_ANY,"VNodes: " ++ integer_to_list(Entry#?StatisticsDB.vNodes)),
 
       DialogSizer = wxBoxSizer:new(?wxVERTICAL),
