@@ -12,6 +12,7 @@
 %% API
 -export([download_file/2,delete_file/2,upload_file/2,update_file/2,transfer/1, terminate/1, exit_node/1]).
 
+-include("records.hrl").
 %%%===================================================================
 %%% Storage gen_server calls
 %%%===================================================================
@@ -37,7 +38,7 @@ upload_file(File, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
     _ ->
-      gen_server:call({global, Dest}, {upload_file, File}, infinity);
+      gen_server:call({global, Dest}, {upload_file, File});
     undefined ->
       {reply, undefined}
   end.
@@ -50,7 +51,7 @@ delete_file(FileName, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
     _ ->
-      gen_server:call({global, Dest}, {delete_file, FileName}, infinity);
+      gen_server:call({global, Dest}, {delete_file, FileName});
     undefined ->
       {reply, undefined}
   end.
@@ -63,7 +64,7 @@ update_file(FileName, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
     _ ->
-      gen_server:call({global, Dest}, {update_file, FileName}, infinity);
+      gen_server:call({global, Dest}, {update_file, FileName});
     undefined ->
       {reply, undefined}
   end.
@@ -101,7 +102,7 @@ transfer_file({_,[]},[]) ->
 transfer_file({PartName,[Dest|Rest]},[NewDest|Rest2]) ->
   if
     Dest /= NewDest ->
-      gen_server:cast({global,Dest},{transfer,{PartName,NewDest}});
+      gen_server:call({global,Dest},{transfer,{PartName,NewDest}});
     true ->
       ok
   end,
