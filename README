@@ -19,3 +19,5 @@ to do-
 
 4)if the same node rejoining the ring we do not add him again to the ring to avoid multiple vnodes (need to perform check in statisticsDB)
 
+current 26/8 14:55
+Program crashes when trying to exit a process.

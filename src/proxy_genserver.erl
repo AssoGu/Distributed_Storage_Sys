@@ -27,11 +27,22 @@ init([]) ->
   {ok, #state{}}.
 
 
+%%%===================================================================
+%%% Handle call
+%%%===================================================================
+
+
+%%.	Is exists:
+%%•	Check in the main DB if the node is exists
+
 handle_call({is_exists, FileName}, _From, State = #state{}) ->
   IsExists = database_logic:global_is_exists(FileName),
   {reply, IsExists, State};
 
-%delete node
+%%•	Check if the node is not already exists.
+%%•	If not, contact with load balancer to find the positions of this new node.
+%%•	Contact the load balancer in order to re balance the ring and the file stored in each node.
+%%•	Update the DB
 
 handle_call({add_node, Node, StorageGenPid, VNodes}, _From, State = #state{}) ->
   case get(?HashRing) of
@@ -66,6 +77,10 @@ handle_call({exit_node, Node}, _From, State = #state{}) ->
   database_logic:share_db(Node),
   {reply, ok, State};
 
+%%1.	get positions:
+%%•	interact with the load balancer to get positions:
+%%i.	create the hash of each file part and construct the positions
+
 handle_call({get_positions, FileName}, _From, State = #state{}) ->
   Positions = load_balancer_logic:get_positions(FileName, ?Replicas),
   {reply, Positions, State};
@@ -73,6 +88,10 @@ handle_call({get_positions, FileName}, _From, State = #state{}) ->
 handle_call({get_positions, FileName, PartsNum}, _From, State = #state{}) ->
   Positions = load_balancer_logic:get_positions(FileName, PartsNum, ?Replicas),
   {reply, Positions, State}.
+
+%%%===================================================================
+%%% Handle cast
+%%%===================================================================
 
 
 handle_cast(terminate, State = #state{}) ->
