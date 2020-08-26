@@ -10,7 +10,7 @@
 -author("asorg").
 
 %% API
--export([download_file/2,delete_file/2,upload_file/2,update_file/2,transfer/1]).
+-export([download_file/2,delete_file/2,upload_file/2,update_file/2,transfer/1, terminate/1, exit_node/1]).
 
 %%%===================================================================
 %%% Storage gen_server calls
@@ -67,6 +67,23 @@ update_file(FileName, Dest) ->
     undefined ->
       {reply, undefined}
   end.
+
+%@doc
+%% Input - {FileName, Binary}
+%% Output - ok
+%% Output error - {error,Reason}
+exit_node(Node) ->
+  RetVal = global:whereis_name(Node),
+  case RetVal of
+    _ ->
+      terminate(Node);
+    undefined ->
+      {reply, undefined}
+  end.
+
+%terminate the Node
+terminate(Node) ->
+  gen_server:cast({global,Node},{terminate}).
 
 transfer([]) ->
   ok;

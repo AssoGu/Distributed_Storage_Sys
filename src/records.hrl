@@ -22,6 +22,7 @@
 -define(menuDownload, 10).
 -define(menuUpload, 11).
 -define(menuDelete, 12).
+-define(menuExit, 13).
 -define(storageButton, 30).
 -define(proxyButton, 40).
 -define(FilesWin, 42).

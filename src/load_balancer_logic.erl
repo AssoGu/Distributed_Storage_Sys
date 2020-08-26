@@ -10,7 +10,7 @@
 
 -author("adircohen").
 
--export([new_ring/2, ring_lookup/2, get_positions/2, get_positions/3, add_node/2, test_ring/0, pos_difference/2,rebalance_ring/0]).
+-export([new_ring/2, ring_lookup/2, get_positions/2, get_positions/3, add_node/2, test_ring/0, pos_difference/2,rebalance_ring/0, delete_node/1]).
 -include("records.hrl").
 -define(HASH, md5).
 
@@ -59,6 +59,23 @@ add_node(Node, VNodes) ->
 
 %%•	Interate over hash ring nodes using gb_trees:iterate_from.
 %%•	 If the needed node is found we return the node.
+
+%@doc - delete node to CH ring
+%% Input - Node
+%% Output new ring
+delete_node(Node) ->
+  NewRing = lists:foldl(
+    fun({Pos, Node}, Ring) ->
+      case gb_trees:is_defined(Pos,Ring) of
+        true  ->
+          gb_trees:delete(Node, Ring);
+        false ->
+          Ring
+      end
+    end,
+    get(?HashRing), []),
+  put(?HashRing,NewRing),
+  ok.
 
 
 %@doc - perform lookup on CH ring
