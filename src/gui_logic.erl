@@ -22,7 +22,7 @@ create_window(Wx)->
 	Panel = wxPanel:new(Frame, []),
 
 	%% Setup sizers
-	MainSizer = wxBoxSizer:new(?wxVERTICAL),
+	wxBoxSizer:new(?wxVERTICAL),
 
 	%% Create AuiManager
 	Manager = wxAuiManager:new([{managed_wnd, Panel}
@@ -201,7 +201,7 @@ list_to_string(List = [H|T],Acc) when length(List) > 1 ->
 	Str = "["++atom_to_list(H)++"]"++",",
 	list_to_string(T,Acc ++ Str);
 
-list_to_string([H|T],Acc) ->
+list_to_string([H|_T],Acc) ->
 	Str = "["++atom_to_list(H)++"]"++ ".",
 	Acc++Str.
 
