@@ -85,7 +85,7 @@ handle_cast({terminate}, State) ->
   supervisor:terminate(storageSup,self()),
   {stop,normal,State};
 
-handle_cast(A, State) ->
+handle_cast(_A, State) ->
   {noreply, State}.
 
 handle_info(_Info, State) ->

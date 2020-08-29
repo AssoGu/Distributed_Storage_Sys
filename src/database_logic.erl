@@ -10,7 +10,7 @@
 -author("asorg").
 
 -export([initDB/0, global_insert_file/3, global_update_locations/2, global_find_file/1, global_delete_file/1, global_is_exists/1, global_update_valid/2, share_db/1, statistics_add_node/3, statistics_delete_node/1
-,statistics_storage_available/1, statistics_get_node/1, statistics_dec_capacity/2, statistics_inc_capacity/2, statistics_delete_node/1]).
+,statistics_storage_available/1, statistics_get_node/1, statistics_dec_capacity/2, statistics_inc_capacity/2]).
 
 -include("records.hrl").
 
@@ -144,7 +144,6 @@ statistics_storage_available(Node) ->
   {atomic, [{_,_,_,_,Cap,_}]} = mnesia:transaction(Fun),
   Cap.
 
-statistics_dump() ->ok.
 
 %@doc
 %% Input - Node

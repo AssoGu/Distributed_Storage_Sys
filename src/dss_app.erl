@@ -7,7 +7,7 @@
 
 -behaviour(application).
 
--export([start/0,start/1, start/3, stop/1]).
+-export([start/0,start/1, start/3, stop/1,start/2]).
 -include("records.hrl").
 
 
@@ -26,6 +26,9 @@ start() ->
     %launch main gui
     gui_genserver:start(0).
 
+%dummy
+start(_A,_B) ->
+    ok.
 
 start(storage, ProxyNode, Capacity) ->
     %Starts mnesia and connect to proxy node
