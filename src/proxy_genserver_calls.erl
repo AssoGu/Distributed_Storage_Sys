@@ -27,8 +27,8 @@ get_positions(FileName, PartsNum) ->
 %%2.	add node:
 %%•	call proxy gen_server in order to add a node to the CH ring.
 %@doc - add node to CH ring
-add_node(Node, StorageGenPid, VNodes) ->
-  gen_server:call({global, ?LoadBalancer}, {add_node, Node, StorageGenPid,VNodes}, infinity).
+add_node(Node, StorageGenPid, {Cap, VNodes}) ->
+  gen_server:call({global, ?LoadBalancer}, {add_node, Node, StorageGenPid,VNodes,Cap}, infinity).
 %@doc - checks if file exists on database, return exists/not_exists
 
 exit_node(Node) ->

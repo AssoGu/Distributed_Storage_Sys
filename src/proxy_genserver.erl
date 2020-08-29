@@ -44,7 +44,9 @@ handle_call({is_exists, FileName}, _From, State = #state{}) ->
 %%•	Contact the load balancer in order to re balance the ring and the file stored in each node.
 %%•	Update the DB
 
-handle_call({add_node, Node, StorageGenPid, VNodes}, _From, State = #state{}) ->
+handle_call({add_node, Node, StorageGenPid, VNodes, Cap}, _From, State = #state{}) ->
+  database_logic:share_db(Node),
+  database_logic:statistics_add_node(atom_to_list(Node), {Cap, VNodes},"Storage"),
   case get(?HashRing) of
     undefined ->
       io:format("new ring created~n"),
@@ -54,9 +56,8 @@ handle_call({add_node, Node, StorageGenPid, VNodes}, _From, State = #state{}) ->
       io:format("new node~n"),
       gui_genserver_calls:log("New node has been joined!"),
       load_balancer_logic:add_node(StorageGenPid,VNodes),
-      spawn(fun() -> load_balancer_logic:rebalance_ring() end)
+      load_balancer_logic:rebalance_ring()
   end,
-  database_logic:share_db(Node),
   {reply, ok, State};
 
 % exit node
@@ -74,7 +75,6 @@ handle_call({exit_node, Node}, _From, State = #state{}) ->
     undefined ->
       {reply, undefined}
   end,
-  database_logic:share_db(Node),
   {reply, ok, State};
 
 %%1.	get positions:

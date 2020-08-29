@@ -43,10 +43,10 @@ start(storage, ProxyNode, Capacity) ->
     %calculate number of vNodes according to resources (to do)
     CapInMb = Capacity * 1000000,
     VNodes = calculate_VNodes(CapInMb),
+    %add node statistic
     %add storage node to hash ring
-    proxy_genserver_calls:add_node(node(), node(), VNodes),
-    %add node statistics
-    database_logic:statistics_add_node(atom_to_list(node()), {CapInMb, VNodes},"Storage").
+    proxy_genserver_calls:add_node(node(), node(), {CapInMb,VNodes}).
+
 
 start(proxy) ->
     %Create schema and start mnesia

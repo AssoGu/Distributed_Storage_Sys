@@ -64,18 +64,20 @@ add_node(Node, VNodes) ->
 %% Input - Node
 %% Output new ring
 delete_node(Node) ->
-  database_logic:statistics_delete_node(Node),
+  {_,[Entry]} = database_logic:statistics_get_node(atom_to_list(Node)),
+  Positions = node_position({Node, Entry#?StatisticsDB.vNodes}),
   NewRing = lists:foldl(
-    fun({Pos, Node}, Ring) ->
+    fun({Pos, _Node}, Ring) ->
       case gb_trees:is_defined(Pos,Ring) of
         true  ->
-          gb_trees:delete(Node, Ring);
+          gb_trees:delete(Pos, Ring);
         false ->
           Ring
       end
     end,
-    get(?HashRing), []),
+    get(?HashRing), Positions),
   put(?HashRing,NewRing),
+  database_logic:statistics_delete_node(atom_to_list(Node)),
   ok.
 
 
@@ -112,7 +114,6 @@ ring_lookup(Iter, Ring, N, Nodes) ->
 
 %@doc - returns positions of given file on the ring
 %% Input - FileName
-%% Input - Ring - gb_tree
 %% Input - N - Number of replicas
 %% Output - [{PartName0,[Pos1,Pos2..],{PartName1, [Pos1,Pos2..]}...],
 get_positions(FileName, PartsNum, N) ->
@@ -142,7 +143,7 @@ rebalance_ring() ->
     OldLocations = Entry#?GlobalDB.location,
     Parts = Entry#?GlobalDB.partsCount,
     %%•	Calculate new locations of the file over the new ring.
-    NewLocations = proxy_genserver_calls:get_positions(File,Parts),
+    NewLocations = get_positions(File,Parts,?Replicas),
     if
       %%•	Check if there was some change in the locations of each file part.
       OldLocations /= NewLocations ->
