@@ -55,7 +55,7 @@ create_window(Wx)->
 	%% Set Connect Close
 	wxFrame:connect(Frame, close_window),
 
-	{Frame, StatListBox, InfoTextCtrl, FilesListBox,MenuBar}.
+	{Manager, Frame, StatListBox, InfoTextCtrl, FilesListBox,MenuBar}.
 
 create_pane(Parent, Manager, Pane) ->
 	TextCtrl = wxTextCtrl:new(Parent, ?wxID_ANY, [{size, {300,200}},

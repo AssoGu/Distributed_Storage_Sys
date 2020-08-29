@@ -95,7 +95,11 @@ handle_call({get_positions, FileName, PartsNum}, _From, State = #state{}) ->
 
 
 handle_cast(terminate, State = #state{}) ->
-  {stop, normal,State};
+  mnesia:stop(),
+  gui_genserver_calls:terminate(),
+  supervisor:terminate_child(whereis(proxySup), self()),
+  {noreply, State};
+  %{stop, normal,State};
 
 handle_cast(test, State = #state{}) ->
   test_ring(),

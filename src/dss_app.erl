@@ -52,9 +52,8 @@ start(proxy) ->
     %Init databases
     database_logic:initDB(),
     %spawn proxy node with supervisor
-    Ret = dss_proxy_sup:start_link(),
-    database_logic:statistics_add_node(atom_to_list(node()), {0, 0},"Proxy"),
-    io:format("Proxy node Online - ~p ~n", [Ret]).
+    dss_proxy_sup:start_link(),
+    database_logic:statistics_add_node(atom_to_list(node()), {0, 0},"Proxy").
 
 
 

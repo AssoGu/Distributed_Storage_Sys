@@ -64,6 +64,7 @@ add_node(Node, VNodes) ->
 %% Input - Node
 %% Output new ring
 delete_node(Node) ->
+  database_logic:statistics_delete_node(Node),
   NewRing = lists:foldl(
     fun({Pos, Node}, Ring) ->
       case gb_trees:is_defined(Pos,Ring) of
@@ -134,6 +135,7 @@ get_positions(FileName, N) ->
 rebalance_ring() ->
   %%•	Retrieve keys from mnesia DB.
   Keys = mnesia:dirty_all_keys(?GlobalDB),
+  gui_genserver_calls:log("Rebalancing ring..."),
   lists:foreach(fun(File) ->
     {_,[Entry]} = database_logic:global_find_file(File),
     %%•	Find file locations over the current nodes and save the old locations.
@@ -144,7 +146,6 @@ rebalance_ring() ->
     if
       %%•	Check if there was some change in the locations of each file part.
       OldLocations /= NewLocations ->
-        gui_genserver_calls:log("Rebalancing ring..."),
         %%•	Calculate which part have to move between nodes.
         Diff = pos_difference(OldLocations, NewLocations),
         %%•	Perform transfer of the files – each node send the files to their new location.
@@ -154,7 +155,8 @@ rebalance_ring() ->
       true -> ok
     end
                 end,
-    Keys).
+    Keys),
+    gui_genserver_calls:log("Done!").
 
 
 %%====================================================================

@@ -28,7 +28,7 @@
   statLB,
   infoTC,
   menuBar
-}).
+  , manager}).
 
 start(Config) ->
   wx_object:start_link(?MODULE,Config, []).
@@ -37,10 +37,10 @@ start(Config) ->
 init(_) ->
   register(?Gui,self()),
   Wx = wx:new(),
-  {Frame, StatListBox, InfoTextCtrl, FilesListBox, MenuBar} = wx:batch(fun() -> gui_logic:create_window(Wx) end),
+  {Manager, Frame, StatListBox, InfoTextCtrl, FilesListBox, MenuBar} = wx:batch(fun() -> gui_logic:create_window(Wx) end),
   wxWindow:show(Frame),
   erlang:send_after(1, self(), updateGui),
-  {Frame, #state{frame=Frame, filesLB=FilesListBox, statLB=StatListBox, infoTC=InfoTextCtrl, menuBar = MenuBar}}.
+  {Frame, #state{manager=Manager, frame=Frame, filesLB=FilesListBox, statLB=StatListBox, infoTC=InfoTextCtrl, menuBar = MenuBar}}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Callbacks handled as normal gen_server callbacks
@@ -52,6 +52,12 @@ handle_cast({log,Msg}, State) ->
   {noreply,State};
 
 handle_cast(terminate, State) ->
+  wxAuiManager:destroy(State#state.manager),
+  wxFrame:destroy(State#state.frame),
+  wxMenuBar:destroy(State#state.menuBar),
+  wxTextCtrl:destroy(State#state.infoTC),
+  wxListBox:destroy(State#state.filesLB),
+  wxListBox:destroy(State#state.statLB),
   {stop, normal, State};
 
 handle_cast(Msg, State) ->
@@ -172,6 +178,7 @@ handle_info(updateGui, State) ->
     true ->
       wxListBox:set(State#state.filesLB, Files)
   end,
+
   Stat = mnesia:dirty_all_keys(?StatisticsDB),
   if
     Stat == [] ->

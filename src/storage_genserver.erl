@@ -81,6 +81,8 @@ handle_call({transfer,{PartName,NewDest}}, _From, State) ->
 % a proper way to terminate the process
 handle_cast({terminate}, State) ->
   gui_genserver_calls:terminate(),
+  mnesia:stop(),
+  supervisor:terminate(storageSup,self()),
   {stop,normal,State};
 
 handle_cast(A, State) ->
