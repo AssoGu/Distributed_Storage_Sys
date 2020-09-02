@@ -28,6 +28,7 @@ upload_file(Path) ->
   FileName = filename:basename(Path),
   Dir      = filename:dirname(Path)++"/",
   Result = database_logic:global_is_exists(FileName),
+  StartTime = erlang:monotonic_time(millisecond),
   if
     Result == exists ->
       gui_genserver_calls:log("File: ~p already exists, use update call instead",FileName),
@@ -48,8 +49,11 @@ upload_file(Path) ->
       upload_chunks_serial(Positions, Chunks),
       % 7. update mnesia DB with valid 1
       database_logic:global_insert_file(FileName, ChunksNum, Positions),
+      EndTime = erlang:monotonic_time(millisecond),
+      TotalTimeInt = EndTime - StartTime,
+      TotalTime = integer_to_list(TotalTimeInt),
       gui_genserver_calls:log("~p has been uploaded.",FileName),
-      io:format("Finish upload file= ~p ~n",[FileName])
+      gui_genserver_calls:log("Total time for upload the file is ~p [us].",TotalTime)
   end.
 
 % 1. check if the file exists in mnesia DB
@@ -64,6 +68,7 @@ download_file(FileName) ->
   Result = database_logic:global_is_exists(FileName),
   if
     Result == exists ->
+      StartTime = erlang:monotonic_time(millisecond),
       gui_genserver_calls:log("Downloading file: ~p...",FileName),
       io:format("Downloading file= ~p .... ~n",[FileName]),
       % 2. collect a list of parts locations
@@ -76,7 +81,11 @@ download_file(FileName) ->
       files_logic:combine_chunks(FileName, ChunksNum, ?Downloads_folder),
       % 5. delete all temporary chunks saved to memory in step #3.
       delete_local_chunks(Positions),
-      gui_genserver_calls:log("~p has been downloaded.",FileName);
+      EndTime = erlang:monotonic_time(millisecond),
+      TotalTimeInt = EndTime - StartTime,
+      TotalTime = integer_to_list(TotalTimeInt),
+      gui_genserver_calls:log("~p has been downloaded.",FileName),
+      gui_genserver_calls:log("Total time for download the file is ~p [us].",TotalTime);
     true ->
       gui_genserver_calls:log("File ~p does not exists",FileName),
       io:format("file= ~p does not exists in global DB ~n",[FileName])
@@ -97,6 +106,7 @@ delete_file(FileName) ->
   Result = database_logic:global_is_exists(FileName),
   if
     Result == exists ->
+      StartTime = erlang:monotonic_time(millisecond),
       % 2. change valid to 0
       database_logic:global_update_valid(FileName, 0),
       % 3. collect a list of parts locations
@@ -106,6 +116,10 @@ delete_file(FileName) ->
       delete_chunks_serial(Positions),
       gui_genserver_calls:log("~p has been deleted.",FileName),
       io:format("deleting file= ~p from DB has been completed.... ~n",[FileName]),
+      EndTime = erlang:monotonic_time(millisecond),
+      TotalTimeInt = EndTime - StartTime,
+      TotalTime = integer_to_list(TotalTimeInt),
+      gui_genserver_calls:log("Total time for delete the file is ~p [us].",TotalTime),
       database_logic:global_delete_file(FileName);
     true ->
       io:format("file= ~p does not exists in global DB ~n",[FileName])
