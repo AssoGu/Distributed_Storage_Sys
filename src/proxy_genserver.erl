@@ -64,6 +64,9 @@ handle_call({add_node, Node, StorageGenPid, VNodes, Cap}, _From, State = #state{
 handle_call({exit_node, Node}, _From, State = #state{}) ->
   RetVal = global:whereis_name(Node),
   case RetVal of
+    undefined ->
+      {reply, undefined};
+
     _ ->
       io:format("handle exit node~n"),
       gui_genserver_calls:log("Node ~p disconnected",atom_to_list(Node)),
@@ -71,9 +74,8 @@ handle_call({exit_node, Node}, _From, State = #state{}) ->
       load_balancer_logic:delete_node(Node),
       % re construct files on the ring for the new one.
       load_balancer_logic:rebalance_ring(),
-      storage_genserver_calls:exit_node(Node);
-    undefined ->
-      {reply, undefined}
+      storage_genserver_calls:exit_node(Node)
+
   end,
   {reply, ok, State};
 

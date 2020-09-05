@@ -72,15 +72,15 @@ calculate_VNodes(Capacity) ->
     Vnodes.
 
 
-floor(X) when X < 0 ->
+floor2(X) when X < 0 ->
     T = trunc(X),
     case X - T == 0 of
         true -> T;
         false -> T - 1
     end;
 
-floor(X) ->
+floor2(X) ->
     trunc(X).
 
 idiv(A, B) ->
-    floor(A / B).
+    floor2(A / B).

@@ -24,10 +24,10 @@
 download_file(FileName, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
-    _ ->
-      gen_server:call({global, Dest}, {download_file, FileName});
     undefined ->
-      {reply, undefined}
+      {reply, undefined};
+    _ ->
+      gen_server:call({global, Dest}, {download_file, FileName})
   end.
 
 %@doc
@@ -37,10 +37,10 @@ download_file(FileName, Dest) ->
 upload_file(File, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
-    _ ->
-      gen_server:call({global, Dest}, {upload_file, File});
     undefined ->
-      {reply, undefined}
+      {reply, undefined};
+    _ ->
+      gen_server:call({global, Dest}, {upload_file, File})
   end.
 
 %@doc
@@ -50,10 +50,11 @@ upload_file(File, Dest) ->
 delete_file(FileName, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
-    _ ->
-      gen_server:call({global, Dest}, {delete_file, FileName});
     undefined ->
-      {reply, undefined}
+      {reply, undefined};
+
+    _ ->
+      gen_server:call({global, Dest}, {delete_file, FileName})
   end.
 
 %@doc
@@ -63,10 +64,11 @@ delete_file(FileName, Dest) ->
 update_file(FileName, Dest) ->
   RetVal = global:whereis_name(Dest),
   case RetVal of
-    _ ->
-      gen_server:call({global, Dest}, {update_file, FileName});
     undefined ->
-      {reply, undefined}
+      {reply, undefined};
+    _ ->
+      gen_server:call({global, Dest}, {update_file, FileName})
+
   end.
 
 %@doc
@@ -76,10 +78,10 @@ update_file(FileName, Dest) ->
 exit_node(Node) ->
   RetVal = global:whereis_name(Node),
   case RetVal of
-    _ ->
-      terminate(Node);
     undefined ->
-      {reply, undefined}
+      {reply, undefined};
+    _ ->
+      terminate(Node)
   end.
 
 %terminate the Node
