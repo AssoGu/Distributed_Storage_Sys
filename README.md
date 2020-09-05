@@ -1,4 +1,6 @@
 
+tested Erlang/OTP 23
+
 Installation
 -----
 Download repository:
