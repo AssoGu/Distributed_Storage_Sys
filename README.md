@@ -1,5 +1,5 @@
 
-tested Erlang/OTP 23
+*tested with Erlang/OTP 23
 
 Installation
 -----
