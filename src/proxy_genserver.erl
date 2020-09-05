@@ -65,8 +65,7 @@ handle_call({exit_node, Node}, _From, State = #state{}) ->
   RetVal = global:whereis_name(Node),
   case RetVal of
     undefined ->
-      {reply, undefined};
-
+      {reply, undefined, State};
     _ ->
       io:format("handle exit node~n"),
       gui_genserver_calls:log("Node ~p disconnected",atom_to_list(Node)),
